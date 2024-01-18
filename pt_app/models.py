@@ -1,5 +1,5 @@
 from django.db import models
-
+     
 class Exercise(models.Model):
     name = models.CharField(max_length=100)
 
@@ -7,8 +7,8 @@ class Exercise(models.Model):
         return self.name
     
 class Workout(models.Model):
-    name = models.CharField(max_length=50, default='Default Name')
-    exercises = models.ManyToManyField(Exercise)
+    name = models.CharField(max_length=50)
+    exercises = models.ManyToManyField(Exercise, related_name='workouts')
 
     def __str__(self):
-        return f"Workout {self.id}"
+        return self.name

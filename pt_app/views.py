@@ -17,6 +17,17 @@ class WorkoutList(APIView):
         return Response(serializer.data)
     
 class ExerciseList(APIView):
+    def get(self, request, id, format=None):
+        try:
+            workout = Workout.objects.get(id=id)
+        except Workout.DoesNotExist:
+            return Response({"error": "Workout not found"}, status=404)
+        
+        exercises = workout.exercises.all()
+        serializer = ExerciseSerializer(exercises, many=True)
+        return Response(serializer.data)
+    
+class Exercises(APIView):
     def get(self, request, format=None):
         exercises = Exercise.objects.all()
         serializer = ExerciseSerializer(exercises, many=True)
