@@ -7,8 +7,21 @@ class ExerciseSerializer(serializers.ModelSerializer):
         fields = ['name']
 
 class WorkoutSerializer(serializers.ModelSerializer):
-    exercises = ExerciseSerializer(many=True, read_only=True)
-
+    exercises = serializers.ListField(
+        child=serializers.CharField(),
+        write_only=True
+    )
+    
     class Meta:
         model = Workout
         fields = ['id', 'name', 'exercises']
+
+    def create(self, validated_data):
+        exercise_names = validated_data.pop('exercises')
+        workout = Workout.objects.create(**validated_data)
+        for name in exercise_names:
+            exercise, created = Exercise.objects.get_or_create(name=name)
+            workout.exercises.add(exercise)
+        return workout
+
+   
