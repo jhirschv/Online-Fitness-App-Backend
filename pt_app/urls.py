@@ -1,6 +1,10 @@
 from django.urls import path
 from . import views
 from .views import WorkoutList, ExerciseCreate, Exercises, WorkoutCreate, ExerciseList
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
 
 urlpatterns = [
     path('test-api/', views.test_api, name='test_api'),
@@ -9,6 +13,8 @@ urlpatterns = [
     path('exercise_create/', ExerciseCreate.as_view(), name='exercise_create'),
     path('workout_create/', WorkoutCreate.as_view(), name='workout_create'),
     path('exercises/<int:id>', ExerciseList.as_view(), name='exercise_list'),
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
 
  
