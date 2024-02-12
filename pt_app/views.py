@@ -1,55 +1,27 @@
-from django.shortcuts import render
-from django.http import JsonResponse
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from .models import Workout, Exercise
-from .serializers import WorkoutSerializer, ExerciseSerializer
-from rest_framework import status
-from .serializers import MyTokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework import viewsets
+from .models import Program, Phase, Workout, Exercise, WorkoutExercise
+from .serializers import MyTokenObtainPairSerializer, ProgramSerializer, PhaseSerializer, WorkoutSerializer, ExerciseSerializer, WorkoutExerciseSerializer
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
 
-def test_api(request):
-    data = {'message': 'Hello from Django!'}
-    return JsonResponse(data)
+class ProgramViewSet(viewsets.ModelViewSet):
+    queryset = Program.objects.all()
+    serializer_class = ProgramSerializer
 
-class WorkoutList(APIView):
-    def get(self, request, format=None):
-        workouts = Workout.objects.all()
-        serializer = WorkoutSerializer(workouts, many=True)
-        return Response(serializer.data)
-    
-class ExerciseList(APIView):
-    def get(self, request, id, format=None):
-        try:
-            workout = Workout.objects.get(id=id)
-        except Workout.DoesNotExist:
-            return Response({"error": "Workout not found"}, status=404)
-        
-        exercises = workout.exercises.all()
-        serializer = ExerciseSerializer(exercises, many=True)
-        return Response(serializer.data)
-    
-class Exercises(APIView):
-    def get(self, request, format=None):
-        exercises = Exercise.objects.all()
-        serializer = ExerciseSerializer(exercises, many=True)
-        return Response(serializer.data)
-    
-class ExerciseCreate(APIView):
-    def post(self, request, format=None):
-        serializer = ExerciseSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-class WorkoutCreate(APIView):
-    def post(self, request, format=None):
-        serializer = WorkoutSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class PhaseViewSet(viewsets.ModelViewSet):
+    queryset = Phase.objects.all()
+    serializer_class = PhaseSerializer
+
+class WorkoutViewSet(viewsets.ModelViewSet):
+    queryset = Workout.objects.all()
+    serializer_class = WorkoutSerializer
+
+class ExerciseViewSet(viewsets.ModelViewSet):
+    queryset = Exercise.objects.all()
+    serializer_class = ExerciseSerializer
+
+class WorkoutExerciseViewSet(viewsets.ModelViewSet):
+    queryset = WorkoutExercise.objects.all()
+    serializer_class = WorkoutExerciseSerializer

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Exercise, Workout
+from .models import Program, Phase, Workout, Exercise, WorkoutExercise
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 
@@ -13,24 +13,36 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 class ExerciseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Exercise
-        fields = ['name']
+        fields = '__all__'
 
-class WorkoutSerializer(serializers.ModelSerializer):
-    exercises = serializers.ListField(
-        child=serializers.CharField(),
-        write_only=True
-    )
+class WorkoutExerciseSerializer(serializers.ModelSerializer):
+    # Explicitly serialize the related Exercise using ExerciseSerializer
+    exercise = ExerciseSerializer(read_only=True)
     
     class Meta:
+        model = WorkoutExercise
+        fields = '__all__'
+
+class WorkoutSerializer(serializers.ModelSerializer):
+    # Serialize nested WorkoutExercises within each Workout
+    workout_exercises = WorkoutExerciseSerializer(many=True, read_only=True)
+
+    class Meta:
         model = Workout
-        fields = ['id', 'name', 'exercises']
+        fields = '__all__'
 
-    def create(self, validated_data):
-        exercise_names = validated_data.pop('exercises')
-        workout = Workout.objects.create(**validated_data)
-        for name in exercise_names:
-            exercise, created = Exercise.objects.get_or_create(name=name)
-            workout.exercises.add(exercise)
-        return workout
+class PhaseSerializer(serializers.ModelSerializer):
+    # Serialize nested Workouts within each Phase
+    workouts = WorkoutSerializer(many=True, read_only=True)
 
-   
+    class Meta:
+        model = Phase
+        fields = '__all__'
+
+class ProgramSerializer(serializers.ModelSerializer):
+    # Serialize nested Phases within each Program
+    phases = PhaseSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Program
+        fields = '__all__'
