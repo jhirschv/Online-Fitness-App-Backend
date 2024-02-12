@@ -5,6 +5,11 @@ from rest_framework.response import Response
 from .models import Workout, Exercise
 from .serializers import WorkoutSerializer, ExerciseSerializer
 from rest_framework import status
+from .serializers import MyTokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+class MyTokenObtainPairView(TokenObtainPairView):
+    serializer_class = MyTokenObtainPairSerializer
 
 def test_api(request):
     data = {'message': 'Hello from Django!'}
