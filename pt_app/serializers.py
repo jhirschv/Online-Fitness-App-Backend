@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Program, Phase, Workout, Exercise, WorkoutExercise
+from .models import Program, Phase, Workout, Exercise, WorkoutExercise, User
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 
@@ -9,6 +9,11 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         token = super().get_token(user)
         token['username'] = user.username
         return token
+    
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username']
 
 class ExerciseSerializer(serializers.ModelSerializer):
     class Meta:
@@ -40,7 +45,7 @@ class PhaseSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class ProgramSerializer(serializers.ModelSerializer):
-    # Serialize nested Phases within each Program
+    creator = UserSerializer(read_only=True)
     phases = PhaseSerializer(many=True, read_only=True)
 
     class Meta:

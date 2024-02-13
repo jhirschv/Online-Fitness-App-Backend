@@ -1,5 +1,7 @@
 from django.contrib import admin
-from .models import Program, Phase, Workout, Exercise, WorkoutExercise
+from .models import Program, Phase, Workout, Exercise, WorkoutExercise, User
+
+admin.site.register(User)
 
 @admin.register(Program)
 class ProgramAdmin(admin.ModelAdmin):
