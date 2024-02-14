@@ -13,7 +13,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username']
+        fields = '__all__'
 
 class ExerciseSerializer(serializers.ModelSerializer):
     class Meta:
