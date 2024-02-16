@@ -11,7 +11,7 @@ class ProgramAdmin(admin.ModelAdmin):
 
 @admin.register(Phase)
 class PhaseAdmin(admin.ModelAdmin):
-    list_display = ('program', 'number', 'weeks')
+    list_display = ('program', 'name', 'weeks')
     search_fields = ('program__name',)
     list_filter = ('program',)
 

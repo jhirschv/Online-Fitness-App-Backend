@@ -17,11 +17,11 @@ class Program(models.Model):
 
 class Phase(models.Model):
     program = models.ForeignKey(Program, related_name='phases', on_delete=models.CASCADE)
-    number = models.IntegerField()
+    name = models.CharField(max_length=120, default='No Name')
     weeks = models.IntegerField()
 
     def __str__(self):
-        return f"{self.program} Phase {self.number}"
+        return f"{self.program} Phase {self.name}"
 
 class Workout(models.Model):
     phase = models.ForeignKey(Phase, related_name='workouts', on_delete=models.CASCADE, null=True)
