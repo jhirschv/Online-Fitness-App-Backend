@@ -44,3 +44,5 @@ class WorkoutExercise(models.Model):
     reps = models.IntegerField()
     note = models.TextField(blank=True, null=True)
     video = models.URLField(blank=True, null=True)
+
+
