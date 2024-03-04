@@ -45,4 +45,47 @@ class WorkoutExercise(models.Model):
     note = models.TextField(blank=True, null=True)
     video = models.URLField(blank=True, null=True)
 
+class UserProgramProgress(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='active_programs')
+    program = models.ForeignKey(Program, on_delete=models.CASCADE, related_name='active_users')
+    current_phase = models.ForeignKey(Phase, on_delete=models.SET_NULL, null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    start_date = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username}'s progress in {self.program.name}"
+
+class PhaseProgress(models.Model):
+    user_program_progress = models.ForeignKey(UserProgramProgress, on_delete=models.CASCADE, related_name='phase_progress')
+    phase = models.ForeignKey(Phase, on_delete=models.CASCADE, related_name='progresses')
+    current_week = models.IntegerField(default=1)
+    current_workout_index = models.IntegerField(default=0)
+
+    class Meta:
+        unique_together = ('user_program_progress', 'phase')
+
+    def __str__(self):
+        return f"{self.phase.program.name} - {self.phase.name}: Week {self.current_week}"
+
+class WorkoutSession(models.Model):
+    user_program_progress = models.ForeignKey(UserProgramProgress, on_delete=models.CASCADE, related_name='workout_sessions')
+    workout = models.ForeignKey(Workout, on_delete=models.CASCADE, related_name='sessions')
+    date = models.DateTimeField(auto_now_add=True)
+    completed = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.user_program_progress.user.username}'s session: {self.workout.name} on {self.date.strftime('%Y-%m-%d')}"
+
+class ExerciseLog(models.Model):
+    workout_session = models.ForeignKey(WorkoutSession, related_name='exercise_logs', on_delete=models.CASCADE)
+    workout_exercise = models.ForeignKey(WorkoutExercise, on_delete=models.CASCADE)
+    sets_completed = models.IntegerField(default=0)
+    reps_per_set = models.IntegerField(default=0)
+    weight_used = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+    note = models.TextField(blank=True, null=True)
+    video = models.URLField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Log for {self.workout_exercise.exercise.name} in session {self.workout_session.id}"
+
 

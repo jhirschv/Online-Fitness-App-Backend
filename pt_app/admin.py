@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Program, Phase, Workout, Exercise, WorkoutExercise, User
+from .models import Program, Phase, Workout, Exercise, WorkoutExercise, User, UserProgramProgress, PhaseProgress, WorkoutSession, ExerciseLog
 
 admin.site.register(User)
 
@@ -32,4 +32,8 @@ class WorkoutExerciseAdmin(admin.ModelAdmin):
     search_fields = ('workout__name', 'exercise__name')
     list_filter = ('workout__phase__program', 'exercise')
 
+admin.site.register(UserProgramProgress)
+admin.site.register(PhaseProgress)
+admin.site.register(WorkoutSession)
+admin.site.register(ExerciseLog)
 
