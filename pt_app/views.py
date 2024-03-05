@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Program, Phase, Workout, Exercise, WorkoutExercise, UserProgramProgress, PhaseProgress, WorkoutSession, ExerciseLog
 from .serializers import MyTokenObtainPairSerializer, ProgramSerializer, PhaseSerializer, WorkoutSerializer, ExerciseSerializer, WorkoutExerciseSerializer
-from .utils import set_or_update_user_program_progress
+from .utils import set_or_update_user_program_progress, get_current_or_next_workout
 from rest_framework import status
 
 class MyTokenObtainPairView(TokenObtainPairView):
@@ -78,3 +78,14 @@ class ActiveProgramView(APIView):
             return Response(serializer.data)
         except UserProgramProgress.DoesNotExist:
             return Response({'error': 'No active program found.'}, status=status.HTTP_404_NOT_FOUND)
+        
+class CurrentWorkoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        current_workout = get_current_or_next_workout(request.user)
+        if current_workout:
+            serializer = WorkoutSerializer(current_workout)
+            return Response(serializer.data)
+        else:
+            return Response({'message': 'No current workout found.'}, status=404)

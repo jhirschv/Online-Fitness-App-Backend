@@ -3,7 +3,8 @@ from . import views
 from rest_framework_simplejwt.views import TokenRefreshView
 from .views import MyTokenObtainPairView
 from rest_framework.routers import DefaultRouter
-from .views import ProgramViewSet, PhaseViewSet, WorkoutViewSet, ExerciseViewSet, WorkoutExerciseViewSet, UserProgramViewSet, ProgramCreateView, ActiveProgramView, SetActiveProgramView
+from .views import (ProgramViewSet, PhaseViewSet, WorkoutViewSet, ExerciseViewSet, WorkoutExerciseViewSet, UserProgramViewSet, 
+ProgramCreateView, ActiveProgramView, SetActiveProgramView, CurrentWorkoutView)
 
 router = DefaultRouter()
 router.register(r'programs', ProgramViewSet)
@@ -18,6 +19,7 @@ urlpatterns = [
     path('create_program/', ProgramCreateView.as_view(), name='program-create'),
     path('get_active_program/', ActiveProgramView.as_view(), name='get_active_program'),
     path('set_active_program/', SetActiveProgramView.as_view(), name='set_active_program'),
+    path('current_workout/', CurrentWorkoutView.as_view(), name='current_workout'),
     path('api/token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
