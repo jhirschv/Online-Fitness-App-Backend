@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Program, Phase, Workout, Exercise, WorkoutExercise, User
+from .models import Program, Phase, Workout, Exercise, WorkoutExercise, User, WorkoutSession, ExerciseLog, ExerciseSet
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 
@@ -87,3 +87,26 @@ class ProgramSerializer(serializers.ModelSerializer):
     class Meta:
         model = Program
         fields = '__all__'
+
+#workout journal feature
+        
+class ExerciseSetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExerciseSet
+        fields = ['set_number', 'reps', 'weight_used', 'video']
+
+class ExerciseLogSerializer(serializers.ModelSerializer):
+    sets = ExerciseSetSerializer(many=True, read_only=True, source='exercise_sets')
+    workout_exercise = WorkoutExerciseSerializer(read_only=True)
+
+    class Meta:
+        model = ExerciseLog
+        fields = ['id', 'workout_exercise', 'sets_completed', 'note', 'sets']
+
+class WorkoutSessionSerializer(serializers.ModelSerializer):
+    workout = WorkoutSerializer(read_only=True)
+    exercise_logs = ExerciseLogSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = WorkoutSession
+        fields = ['id', 'workout', 'date', 'completed', 'exercise_logs']

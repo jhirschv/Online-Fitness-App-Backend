@@ -1,5 +1,6 @@
 from django.utils import timezone
-from .models import Program, Phase, Workout, Exercise, WorkoutExercise, User, UserProgramProgress, PhaseProgress, WorkoutSession, ExerciseLog
+from django.db import transaction
+from .models import Program, Phase, Workout, Exercise, WorkoutExercise, User, UserProgramProgress, PhaseProgress, WorkoutSession, ExerciseLog, ExerciseSet
 
 def set_or_update_user_program_progress(user, program_id):
     program = Program.objects.get(id=program_id)
@@ -47,3 +48,29 @@ def get_current_or_next_workout(user):
             return workouts.first()
     except UserProgramProgress.DoesNotExist:
         return None
+    
+def start_workout_session(user, workout_id):
+    with transaction.atomic():
+        user_program_progress = UserProgramProgress.objects.get(user=user, is_active=True)
+        workout_session = WorkoutSession.objects.create(
+            user_program_progress=user_program_progress,
+            workout_id=workout_id,
+            completed=False
+        )
+
+        workout_exercises = WorkoutExercise.objects.filter(workout_id=workout_id)
+        for workout_exercise in workout_exercises:
+            exercise_log = ExerciseLog.objects.create(
+                workout_session=workout_session,
+                workout_exercise=workout_exercise,
+                sets_completed=0
+            )
+
+            for set_number in range(1, workout_exercise.sets + 1):
+                ExerciseSet.objects.create(
+                    exercise_log=exercise_log,
+                    set_number=set_number,
+                    reps=0,
+                    weight_used=None
+                )
+    return workout_session

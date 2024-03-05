@@ -80,12 +80,23 @@ class ExerciseLog(models.Model):
     workout_session = models.ForeignKey(WorkoutSession, related_name='exercise_logs', on_delete=models.CASCADE)
     workout_exercise = models.ForeignKey(WorkoutExercise, on_delete=models.CASCADE)
     sets_completed = models.IntegerField(default=0)
-    reps_per_set = models.IntegerField(default=0)
-    weight_used = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
-    note = models.TextField(blank=True, null=True)
-    video = models.URLField(blank=True, null=True)
+    note = models.TextField(blank=True, null=True)   
 
     def __str__(self):
         return f"Log for {self.workout_exercise.exercise.name} in session {self.workout_session.id}"
+    
+class ExerciseSet(models.Model):
+    exercise_log = models.ForeignKey(ExerciseLog, related_name='exercise_sets', on_delete=models.CASCADE)
+    set_number = models.IntegerField()
+    reps = models.IntegerField()
+    weight_used = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+    video = models.URLField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['set_number']
+        unique_together = ('exercise_log', 'set_number')
+
+    def __str__(self):
+        return f"Set {self.set_number} for {self.exercise_log.workout_exercise.exercise.name}"
 
 

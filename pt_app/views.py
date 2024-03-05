@@ -1,11 +1,12 @@
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework import viewsets
 from rest_framework.views import APIView
+from rest_framework.generics import RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Program, Phase, Workout, Exercise, WorkoutExercise, UserProgramProgress, PhaseProgress, WorkoutSession, ExerciseLog
-from .serializers import MyTokenObtainPairSerializer, ProgramSerializer, PhaseSerializer, WorkoutSerializer, ExerciseSerializer, WorkoutExerciseSerializer
-from .utils import set_or_update_user_program_progress, get_current_or_next_workout
+from .serializers import MyTokenObtainPairSerializer, ProgramSerializer, PhaseSerializer, WorkoutSerializer, ExerciseSerializer, WorkoutExerciseSerializer, WorkoutSessionSerializer
+from .utils import set_or_update_user_program_progress, get_current_or_next_workout, start_workout_session
 from rest_framework import status
 
 class MyTokenObtainPairView(TokenObtainPairView):
@@ -89,3 +90,19 @@ class CurrentWorkoutView(APIView):
             return Response(serializer.data)
         else:
             return Response({'message': 'No current workout found.'}, status=404)
+        
+class StartWorkoutSessionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        workout_id = request.data.get('workout_id')
+        try:
+            workout_session = start_workout_session(request.user, workout_id)
+            return Response({'message': 'Workout session started successfully.', 'session_id': workout_session.id})
+        except Exception as e:
+            return Response({'error': str(e)}, status=400)
+        
+class WorkoutSessionDetailView(RetrieveAPIView):
+    queryset = WorkoutSession.objects.all()
+    serializer_class = WorkoutSessionSerializer
+    lookup_field = 'id'

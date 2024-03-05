@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Program, Phase, Workout, Exercise, WorkoutExercise, User, UserProgramProgress, PhaseProgress, WorkoutSession, ExerciseLog
+from .models import Program, Phase, Workout, Exercise, WorkoutExercise, User, UserProgramProgress, PhaseProgress, WorkoutSession, ExerciseLog, ExerciseSet
 
 admin.site.register(User)
 
@@ -36,4 +36,5 @@ admin.site.register(UserProgramProgress)
 admin.site.register(PhaseProgress)
 admin.site.register(WorkoutSession)
 admin.site.register(ExerciseLog)
+admin.site.register(ExerciseSet)
 
