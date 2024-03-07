@@ -19,8 +19,7 @@ def set_or_update_user_program_progress(user, program_id):
     
     if not created:
         # If an existing progress is found, simply ensure it's marked as active
-        user_program_progress.is_active = True
-        user_program_progress.current_phase = program.phases.first()  # Reset to the first phase if reactivating
+        user_program_progress.is_active = True 
         user_program_progress.save()
 
     return user_program_progress
