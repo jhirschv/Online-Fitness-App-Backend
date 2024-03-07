@@ -110,3 +110,21 @@ class WorkoutSessionSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkoutSession
         fields = ['id', 'workout', 'date', 'completed', 'exercise_logs']
+
+class PhaseDetailSerializer(serializers.ModelSerializer):
+    workouts_by_week = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Phase
+        fields = ['id', 'name', 'workouts_by_week']
+
+    def get_workouts_by_week(self, phase):
+        weeks_data = []
+        workouts = WorkoutSerializer(phase.workouts.all(), many=True).data
+        for week_number in range(1, phase.weeks + 1):
+            week_data = {
+                'week': week_number,
+                'workouts': workouts
+            }
+            weeks_data.append(week_data)
+        return weeks_data

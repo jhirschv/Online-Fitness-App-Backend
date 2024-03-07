@@ -59,7 +59,7 @@ class PhaseProgress(models.Model):
     user_program_progress = models.ForeignKey(UserProgramProgress, on_delete=models.CASCADE, related_name='phase_progress')
     phase = models.ForeignKey(Phase, on_delete=models.CASCADE, related_name='progresses')
     current_week = models.IntegerField(default=1)
-    current_workout_index = models.IntegerField(default=0)
+    current_workout_id = models.ForeignKey(Workout, on_delete=models.SET_NULL, null=True, blank=True, related_name='current_progress')  # Changed field name and type
 
     class Meta:
         unique_together = ('user_program_progress', 'phase')

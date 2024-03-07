@@ -25,28 +25,30 @@ def set_or_update_user_program_progress(user, program_id):
 
     return user_program_progress
 
-def get_current_or_next_workout(user):
+def get_current_workout(user):
     try:
-
         program_progress = UserProgramProgress.objects.get(user=user, is_active=True)
-        current_phase = program_progress.current_phase
-        workouts = Workout.objects.filter(phase=current_phase).order_by('id')
         
-        if not workouts.exists():
-            return None  
-        
-        last_session = WorkoutSession.objects.filter(
-            user_program_progress=program_progress,
-            completed=True
-        ).last()
+        # Try to get the PhaseProgress for the current phase
+        phase_progress, created = PhaseProgress.objects.get_or_create(
+            user_program_progress=program_progress, 
+            phase=program_progress.current_phase,
+            defaults={'current_week': 1}
+        )
 
-        if last_session:
-            last_workout_index = list(workouts).index(last_session.workout)
-            next_workout_index = (last_workout_index + 1) % workouts.count()
-            return workouts[next_workout_index]
-        else:
-            return workouts.first()
+        # If there is no current workout set, find the first workout and set it
+        if not phase_progress.current_workout_id:
+            # Assuming phases are ordered and the first phase has at least one workout
+            first_workout = Workout.objects.filter(phase=program_progress.current_phase).order_by('id').first()
+            if first_workout:
+                phase_progress.current_workout_id = first_workout
+                phase_progress.save()
+            else:
+                return None  # Handle the case where there are no workouts
+            
+        return phase_progress.current_workout_id
     except UserProgramProgress.DoesNotExist:
+        # Optionally, handle the case where the user has no program progress, e.g., by creating it or returning None
         return None
     
 def start_workout_session(user, workout_id):

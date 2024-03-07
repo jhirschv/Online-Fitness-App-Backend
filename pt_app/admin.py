@@ -32,7 +32,13 @@ class WorkoutExerciseAdmin(admin.ModelAdmin):
     search_fields = ('workout__name', 'exercise__name')
     list_filter = ('workout__phase__program', 'exercise')
 
-admin.site.register(UserProgramProgress)
+@admin.register(UserProgramProgress)
+class UserProgramProgressAdmin(admin.ModelAdmin):
+    list_display = ('user', 'program', 'current_phase', 'is_active', 'start_date')
+    search_fields = ('user__username', 'program__name', 'current_phase__name')
+    list_filter = ('program', 'current_phase', 'is_active')
+    date_hierarchy = 'start_date'  # Enables a quick date drill down
+
 admin.site.register(PhaseProgress)
 admin.site.register(WorkoutSession)
 admin.site.register(ExerciseLog)

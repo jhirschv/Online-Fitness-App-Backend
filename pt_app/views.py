@@ -1,12 +1,14 @@
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework import viewsets
+from django.db import transaction
 from rest_framework.views import APIView
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from .models import Program, Phase, Workout, Exercise, WorkoutExercise, UserProgramProgress, PhaseProgress, WorkoutSession, ExerciseLog
-from .serializers import MyTokenObtainPairSerializer, ProgramSerializer, PhaseSerializer, WorkoutSerializer, ExerciseSerializer, WorkoutExerciseSerializer, WorkoutSessionSerializer
-from .utils import set_or_update_user_program_progress, get_current_or_next_workout, start_workout_session
+from .serializers import MyTokenObtainPairSerializer, ProgramSerializer, PhaseSerializer, WorkoutSerializer, ExerciseSerializer, WorkoutExerciseSerializer, WorkoutSessionSerializer, PhaseDetailSerializer
+from .utils import set_or_update_user_program_progress, get_current_workout, start_workout_session
 from rest_framework import status
 
 class MyTokenObtainPairView(TokenObtainPairView):
@@ -84,7 +86,7 @@ class CurrentWorkoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        current_workout = get_current_or_next_workout(request.user)
+        current_workout = get_current_workout(request.user)
         if current_workout:
             serializer = WorkoutSerializer(current_workout)
             return Response(serializer.data)
@@ -106,3 +108,40 @@ class WorkoutSessionDetailView(RetrieveAPIView):
     queryset = WorkoutSession.objects.all()
     serializer_class = WorkoutSessionSerializer
     lookup_field = 'id'
+
+class PhasesDetailView(APIView):
+    #permission_classes = [IsAuthenticated]
+
+    def get(self, request, program_id):
+        program = get_object_or_404(Program, pk=program_id)
+        phases = program.phases.all()
+        serializer = PhaseDetailSerializer(phases, many=True)
+        return Response(serializer.data)
+    
+class UpdateWorkoutProgressView(APIView):
+    # Assuming you have permission_classes defined elsewhere
+
+    def post(self, request):
+        user = request.user
+        phase_id = request.data.get('phase_id')
+        week_number = request.data.get('week_number')
+        workout_id = request.data.get('workout_id')
+
+        with transaction.atomic():
+            user_prog_progress = UserProgramProgress.objects.get(user=user, is_active=True)
+            workout = Workout.objects.get(id=workout_id)  # Get the Workout instance
+            
+            phase_prog, _ = PhaseProgress.objects.get_or_create(
+                user_program_progress=user_prog_progress, 
+                phase_id=phase_id,
+                defaults={'current_week': week_number, 'current_workout_id': workout}
+            )
+            
+            user_prog_progress.current_phase_id = phase_id
+            user_prog_progress.save()
+            
+            phase_prog.current_week = week_number
+            phase_prog.current_workout_id = workout  # Update to directly reference the Workout instance
+            phase_prog.save()
+
+            return Response({'status': 'success', 'message': 'Workout progress updated'})
