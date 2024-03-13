@@ -28,7 +28,7 @@ class ExerciseAdmin(admin.ModelAdmin):
 
 @admin.register(WorkoutExercise)
 class WorkoutExerciseAdmin(admin.ModelAdmin):
-    list_display = ('workout', 'exercise', 'sets', 'reps', 'note')
+    list_display = ('workout', 'exercise', 'sets', 'reps', 'note', 'id')
     search_fields = ('workout__name', 'exercise__name')
     list_filter = ('workout__phase__program', 'exercise')
 
