@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.utils.timezone import now
 
 class User(AbstractUser):
     
@@ -71,7 +72,7 @@ class PhaseProgress(models.Model):
 class WorkoutSession(models.Model):
     user_program_progress = models.ForeignKey(UserProgramProgress, on_delete=models.CASCADE, related_name='workout_sessions')
     workout = models.ForeignKey(Workout, on_delete=models.CASCADE, related_name='sessions')
-    date = models.DateTimeField(auto_now_add=True)
+    date = models.DateTimeField(default=now, editable=True)
     completed = models.BooleanField(default=False)
 
     def __str__(self):

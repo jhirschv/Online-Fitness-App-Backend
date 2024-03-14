@@ -104,6 +104,14 @@ class StartWorkoutSessionView(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=400)
         
+class UserWorkoutSessionView(viewsets.ModelViewSet):
+    serializer_class = WorkoutSessionSerializer
+    #permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return WorkoutSession.objects.filter(user_program_progress__user=self.request.user)
+
+        
 class WorkoutSessionDetailView(RetrieveAPIView):
     queryset = WorkoutSession.objects.all()
     serializer_class = WorkoutSessionSerializer

@@ -5,7 +5,7 @@ from .views import MyTokenObtainPairView
 from rest_framework.routers import DefaultRouter
 from .views import (ProgramViewSet, PhaseViewSet, WorkoutViewSet, ExerciseViewSet, WorkoutExerciseViewSet, UserProgramViewSet, 
 ProgramCreateView, ActiveProgramView, SetActiveProgramView, CurrentWorkoutView, StartWorkoutSessionView, WorkoutSessionDetailView, PhasesDetailView,
-UpdateWorkoutProgressView)
+UpdateWorkoutProgressView, UserWorkoutSessionView)
 
 router = DefaultRouter()
 router.register(r'programs', ProgramViewSet)
@@ -14,6 +14,7 @@ router.register(r'phases', PhaseViewSet)
 router.register(r'workouts', WorkoutViewSet)
 router.register(r'exercises', ExerciseViewSet)
 router.register(r'workout_exercises', WorkoutExerciseViewSet)
+router.register(r'user_workout_sessions', UserWorkoutSessionView, basename='userworkoutsession')
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -27,6 +28,7 @@ urlpatterns = [
     path('update_workout_progress/', UpdateWorkoutProgressView.as_view(), name='update_workout_progress'),
     path('api/token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api-auth/', include('rest_framework.urls')),
 ]
 
  
