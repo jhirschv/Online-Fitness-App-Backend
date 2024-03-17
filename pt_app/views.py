@@ -2,12 +2,12 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework import viewsets
 from django.db import transaction
 from rest_framework.views import APIView
-from rest_framework.generics import RetrieveAPIView
+from rest_framework.generics import RetrieveAPIView, RetrieveUpdateAPIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
-from .models import Program, Phase, Workout, Exercise, WorkoutExercise, UserProgramProgress, PhaseProgress, WorkoutSession, ExerciseLog
-from .serializers import MyTokenObtainPairSerializer, ProgramSerializer, PhaseSerializer, WorkoutSerializer, ExerciseSerializer, WorkoutExerciseSerializer, WorkoutSessionSerializer, PhaseDetailSerializer
+from .models import Program, Phase, Workout, Exercise, WorkoutExercise, UserProgramProgress, PhaseProgress, WorkoutSession, ExerciseLog, ExerciseSet
+from .serializers import MyTokenObtainPairSerializer, ProgramSerializer, PhaseSerializer, WorkoutSerializer, ExerciseSerializer, WorkoutExerciseSerializer, WorkoutSessionSerializer, PhaseDetailSerializer, ExerciseSetSerializer
 from .utils import set_or_update_user_program_progress, get_current_workout, start_workout_session
 from rest_framework import status
 
@@ -153,3 +153,11 @@ class UpdateWorkoutProgressView(APIView):
             phase_prog.save()
 
             return Response({'status': 'success', 'message': 'Workout progress updated'})
+
+class ExerciseSetViewSet(RetrieveUpdateAPIView):
+    queryset = ExerciseSet.objects.all()
+    serializer_class = ExerciseSetSerializer
+
+    def perform_update(self, serializer):
+    # Custom update logic here
+        serializer.save()

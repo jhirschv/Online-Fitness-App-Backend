@@ -93,7 +93,7 @@ class ProgramSerializer(serializers.ModelSerializer):
 class ExerciseSetSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExerciseSet
-        fields = ['set_number', 'reps', 'weight_used', 'video']
+        fields = ['id', 'exercise_log', 'set_number', 'reps', 'weight_used', 'video']
 
 class ExerciseLogSerializer(serializers.ModelSerializer):
     sets = ExerciseSetSerializer(many=True, read_only=True, source='exercise_sets')

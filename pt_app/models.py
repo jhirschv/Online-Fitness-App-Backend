@@ -91,12 +91,11 @@ class ExerciseSet(models.Model):
     exercise_log = models.ForeignKey(ExerciseLog, related_name='exercise_sets', on_delete=models.CASCADE)
     set_number = models.IntegerField()
     reps = models.IntegerField()
-    weight_used = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+    weight_used = models.IntegerField(null=True, blank=True)
     video = models.URLField(blank=True, null=True)
 
     class Meta:
-        ordering = ['set_number']
-        unique_together = ('exercise_log', 'set_number')
+        ordering = ['exercise_log']
 
     def __str__(self):
         return f"Set {self.set_number} for {self.exercise_log.workout_exercise.exercise.name}"
