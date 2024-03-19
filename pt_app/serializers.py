@@ -13,7 +13,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = '__all__'
+        fields = ['username', 'id']
 
 class ExerciseSerializer(serializers.ModelSerializer):
     class Meta:
@@ -21,27 +21,39 @@ class ExerciseSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class WorkoutExerciseSerializer(serializers.ModelSerializer):
+    exercise_name = serializers.CharField(write_only=True, required=False)  # Not required if you're updating and not changing the exercise
     exercise = ExerciseSerializer(read_only=True)
-    exercise_id = serializers.PrimaryKeyRelatedField(
-        queryset=Exercise.objects.all(), source='exercise', write_only=True
-    )
 
     class Meta:
         model = WorkoutExercise
-        fields = '__all__'  # Make sure to include 'exercise' and 'exercise_id'
+        fields = ['id', 'exercise', 'exercise_name', 'sets', 'reps', 'note']  
 
     def create(self, validated_data):
-        # This method might be adjusted based on your exact requirements
-        return WorkoutExercise.objects.create(**validated_data)
+        exercise_name = validated_data.pop('exercise_name', None)
+        
+        # If an exercise name is provided, use it to get or create an Exercise instance
+        if exercise_name:
+            exercise, created = Exercise.objects.get_or_create(name=exercise_name)
+            validated_data['exercise'] = exercise
+        
+        workout_exercise = WorkoutExercise.objects.create(**validated_data)
+        return workout_exercise
 
     def update(self, instance, validated_data):
-        # Similarly, adjust this method as needed
+        exercise_name = validated_data.pop('exercise_name', None)
+
+        # If an exercise name is provided, use it to get or create an Exercise instance
+        if exercise_name:
+            instance.exercise, created = Exercise.objects.get_or_create(name=exercise_name)
+            instance.exercise.save()
+
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
         return instance
 
 class WorkoutSerializer(serializers.ModelSerializer):
+    creator = UserSerializer(read_only=True)
     workout_exercises = WorkoutExerciseSerializer(many=True)
 
     class Meta:
@@ -52,23 +64,31 @@ class WorkoutSerializer(serializers.ModelSerializer):
         workout_exercises_data = validated_data.pop('workout_exercises')
         workout = Workout.objects.create(**validated_data)
         for workout_exercise_data in workout_exercises_data:
-            WorkoutExercise.objects.create(workout=workout, **workout_exercise_data)
+            workout_exercise_serializer = WorkoutExerciseSerializer(data=workout_exercise_data)
+            if workout_exercise_serializer.is_valid(raise_exception=True):
+                workout_exercise_serializer.save(workout=workout)
         return workout
 
     def update(self, instance, validated_data):
-        workout_exercises_data = validated_data.pop('workout_exercises')
-        # Update the workout instance
+        workout_exercises_data = validated_data.pop('workout_exercises', [])
+        
+        # Update the Workout instance itself
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
 
-        # Handle updating or creating workout exercises
+        # Clear existing workout_exercises and recreate them
+        # This is a simple approach; for more complex scenarios, you might update existing instances
+        instance.workout_exercises.all().delete()
+
+        # Handle creating new WorkoutExercise instances
         for workout_exercise_data in workout_exercises_data:
-            exercise_id = workout_exercise_data.get('exercise').id
-            workout_exercise_instance, created = WorkoutExercise.objects.update_or_create(
-                workout=instance, exercise_id=exercise_id,
-                defaults=workout_exercise_data
-            )
+            exercise_name = workout_exercise_data.pop('exercise_name', None)
+            exercise = None
+            if exercise_name:
+                exercise, created = Exercise.objects.get_or_create(name=exercise_name)
+            
+            WorkoutExercise.objects.create(workout=instance, exercise=exercise, **workout_exercise_data)
 
         return instance
     

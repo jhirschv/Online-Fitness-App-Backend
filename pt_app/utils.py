@@ -1,6 +1,7 @@
 from django.utils import timezone
 from django.db import transaction
 from .models import Program, Phase, Workout, Exercise, WorkoutExercise, User, UserProgramProgress, PhaseProgress, WorkoutSession, ExerciseLog, ExerciseSet
+from django.conf import settings
 
 def set_or_update_user_program_progress(user, program_id):
     program = Program.objects.get(id=program_id)
