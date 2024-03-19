@@ -38,6 +38,13 @@ class WorkoutViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(creator=self.request.user)
+    
+class UserWorkoutViewSet(viewsets.ModelViewSet):
+    queryset = Workout.objects.all()
+    serializer_class = WorkoutSerializer
+
+    def get_queryset(self):
+        return Workout.objects.filter(creator=self.request.user)
 
 class ExerciseViewSet(viewsets.ModelViewSet):
     queryset = Exercise.objects.all()
@@ -46,6 +53,7 @@ class ExerciseViewSet(viewsets.ModelViewSet):
 class WorkoutExerciseViewSet(viewsets.ModelViewSet):
     queryset = WorkoutExercise.objects.all()
     serializer_class = WorkoutExerciseSerializer
+    
 
 class ProgramCreateView(APIView):
     def post(self, request, *args, **kwargs):
