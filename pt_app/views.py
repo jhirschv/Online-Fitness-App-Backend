@@ -10,6 +10,9 @@ from .models import Program, Phase, Workout, Exercise, WorkoutExercise, UserProg
 from .serializers import MyTokenObtainPairSerializer, ProgramSerializer, PhaseSerializer, WorkoutSerializer, ExerciseSerializer, WorkoutExerciseSerializer, WorkoutSessionSerializer, PhaseDetailSerializer, ExerciseSetSerializer
 from .utils import set_or_update_user_program_progress, get_current_workout, start_workout_session
 from rest_framework import status
+import openai
+import json
+from django.conf import settings
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
@@ -172,3 +175,49 @@ class ExerciseSetViewSet(RetrieveUpdateAPIView):
     def perform_update(self, serializer):
     # Custom update logic here
         serializer.save()
+
+
+#openai api
+
+
+class OpenAIView(APIView):
+    def post(self, request, *args, **kwargs):
+        user_prompt = request.data.get('prompt')
+        if not user_prompt:
+            return Response({"error": "No prompt provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            openai.api_key = settings.API_KEY
+            response = openai.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+        {
+            "role": "system",
+            "content": "You are Professional NSCA Certified Strength and Conditioning Specialist. Write a workout based on the user's prompts following all NSCA guidelines. Your response should be a valid JSON object structured as follows: "
+                       "{"
+                       "\"workout_exercises\": ["
+                       "    {"
+                       "        \"exercise_name\": \"<Name of the exercise>\","
+                       "        \"sets\": <int>,"
+                       "        \"reps\": <int>,"
+                       "        \"note\": \"<Any specific note for the exercise>\""
+                       "    },"
+                       "    {...additional exercises}"
+                       "],"
+                       "\"name\": \"<Name of the workout program>\""
+                       "}. Use double quotes for keys and string values. Replace placeholder text with actual exercise details."
+        },
+        {"role": "user", "content": user_prompt}
+    ]
+            )
+            workout_data = json.loads(response.choices[0].message.content)
+
+            serializer = WorkoutSerializer(data=workout_data, context={'request': request})
+            if serializer.is_valid():
+                serializer.save(creator=request.user)  # Assuming your Workout model has a creator field
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

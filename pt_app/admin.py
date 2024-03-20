@@ -17,7 +17,7 @@ class PhaseAdmin(admin.ModelAdmin):
 
 @admin.register(Workout)
 class WorkoutAdmin(admin.ModelAdmin):
-    list_display = ('phase', 'name')
+    list_display = ('phase', 'name', 'id')
     search_fields = ('name', 'phase__program__name')
     list_filter = ('phase__program',)
 
