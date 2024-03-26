@@ -12,7 +12,7 @@ def set_or_update_user_program_progress(user, program_id):
         user=user,
         program=program,
         defaults={
-            'current_phase': program.phases.first(),  # Assuming you want to start with the first phase
+            'current_phase': program.phases.first(),
             'is_active': True,
             'start_date': timezone.now(),
         }

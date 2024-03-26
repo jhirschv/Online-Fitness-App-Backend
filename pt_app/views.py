@@ -79,10 +79,35 @@ class SetActiveProgramView(APIView):
 
         try:
             user_program_progress = set_or_update_user_program_progress(request.user, program_id)
-            # Assuming you have a serializer for UserProgramProgress
             return Response({'message': 'Program set as active successfully.'})
         except Program.DoesNotExist:
             return Response({'error': 'Program not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+class SetInactiveProgramView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        program_id = request.data.get('program_id')
+        if not program_id:
+            return Response({'error': 'Program ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            # Attempt to retrieve the program and the user's program progress.
+            program = Program.objects.get(id=program_id)
+            user_program_progress = UserProgramProgress.objects.get(user=request.user, program=program)
+            
+            # Set the program to inactive if it's currently active.
+            if user_program_progress.is_active:
+                user_program_progress.is_active = False
+                user_program_progress.save()
+                return Response({'message': 'Program set to inactive successfully.'})
+            else:
+                return Response({'error': 'Program is already inactive.'}, status=status.HTTP_400_BAD_REQUEST)
+                
+        except Program.DoesNotExist:
+            return Response({'error': 'Program not found.'}, status=status.HTTP_404_NOT_FOUND)
+        except UserProgramProgress.DoesNotExist:
+            return Response({'error': 'User program progress not found.'}, status=status.HTTP_404_NOT_FOUND)
         
 class ActiveProgramView(APIView):
     permission_classes = [IsAuthenticated]
@@ -124,7 +149,6 @@ class UserWorkoutSessionView(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return WorkoutSession.objects.filter(user_program_progress__user=self.request.user)
-
         
 class WorkoutSessionDetailView(RetrieveAPIView):
     queryset = WorkoutSession.objects.all()
