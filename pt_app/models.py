@@ -9,7 +9,7 @@ class User(AbstractUser):
 
 class Program(models.Model):
     name = models.CharField(max_length=255)
-    description = models.TextField()
+    description = models.TextField(blank=True)
     creator = models.ForeignKey(User, related_name='created_programs', on_delete=models.CASCADE)
     participants = models.ManyToManyField(User, related_name='participating_programs', blank=True)
 

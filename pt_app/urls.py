@@ -5,7 +5,7 @@ from .views import MyTokenObtainPairView
 from rest_framework.routers import DefaultRouter
 from .views import (ProgramViewSet, PhaseViewSet, WorkoutViewSet, ExerciseViewSet, WorkoutExerciseViewSet, UserProgramViewSet, 
 ProgramCreateView, ActiveProgramView, SetActiveProgramView, CurrentWorkoutView, StartWorkoutSessionView, WorkoutSessionDetailView, PhasesDetailView,
-UpdateWorkoutProgressView, UserWorkoutSessionView, ExerciseSetViewSet, UserWorkoutViewSet, SetInactiveProgramView, OpenAIView)
+UpdateWorkoutProgressView, UserWorkoutSessionView, ExerciseSetViewSet, UserWorkoutViewSet, SetInactiveProgramView, CreateAndActivateProgramView, OpenAIView)
 
 router = DefaultRouter()
 router.register(r'programs', ProgramViewSet)
@@ -23,6 +23,7 @@ urlpatterns = [
     path('get_active_program/', ActiveProgramView.as_view(), name='get_active_program'),
     path('set_active_program/', SetActiveProgramView.as_view(), name='set_active_program'),
     path('set_inactive_program/', SetInactiveProgramView.as_view(), name='set_inactive_program'),
+    path('create-and-activate/', CreateAndActivateProgramView.as_view(), name='create_and_activate_program'),
     path('current_workout/', CurrentWorkoutView.as_view(), name='current_workout'),
     path('start_workout_session/', StartWorkoutSessionView.as_view(), name='start-workout-session'),
     path('workoutSession/<int:id>/', WorkoutSessionDetailView.as_view(), name='workout-session-detail'),

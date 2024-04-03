@@ -109,6 +109,24 @@ class SetInactiveProgramView(APIView):
         except UserProgramProgress.DoesNotExist:
             return Response({'error': 'User program progress not found.'}, status=status.HTTP_404_NOT_FOUND)
         
+class CreateAndActivateProgramView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # Step 1: Create the program
+        serializer = ProgramSerializer(data=request.data)
+        if serializer.is_valid():
+            program = serializer.save(creator=request.user)
+
+            # Step 2: Set the program as active
+            try:
+                user_program_progress = set_or_update_user_program_progress(request.user, program.id)
+                return Response({'message': 'Program created and set as active successfully.'}, status=status.HTTP_201_CREATED)
+            except Program.DoesNotExist:  # This should theoretically never happen since we just created the program
+                return Response({'error': 'An unexpected error occurred.'}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
 class ActiveProgramView(APIView):
     permission_classes = [IsAuthenticated]
 
