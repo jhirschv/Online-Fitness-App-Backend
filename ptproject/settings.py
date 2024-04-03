@@ -56,6 +56,7 @@ CORS_ALLOWED_ORIGINS = [
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -64,7 +65,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'pt_app',
-    'rest_framework'
+    'rest_framework',
+    'channels',
 ]
 
 REST_FRAMEWORK = {
@@ -121,6 +123,12 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=1),
 }
 
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    },
+}
+
 ROOT_URLCONF = 'ptproject.urls'
 
 TEMPLATES = [
@@ -140,6 +148,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'ptproject.wsgi.application'
+ASGI_APPLICATION = 'ptproject.asgi.application'
 
 
 # Database

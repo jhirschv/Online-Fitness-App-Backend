@@ -1,7 +1,9 @@
 from django.contrib import admin
-from .models import Program, Phase, Workout, Exercise, WorkoutExercise, User, UserProgramProgress, PhaseProgress, WorkoutSession, ExerciseLog, ExerciseSet
+from .models import Program, Phase, Workout, Exercise, WorkoutExercise, User, UserProgramProgress, PhaseProgress, WorkoutSession, ExerciseLog, ExerciseSet, Message, ChatSession
 
-admin.site.register(User)
+@admin.register(User)
+class UserAdmin(admin.ModelAdmin):
+    list_display = ('username', 'id')
 
 @admin.register(Program)
 class ProgramAdmin(admin.ModelAdmin):
@@ -43,4 +45,6 @@ admin.site.register(PhaseProgress)
 admin.site.register(WorkoutSession)
 admin.site.register(ExerciseLog)
 admin.site.register(ExerciseSet)
+admin.site.register(Message)
+admin.site.register(ChatSession)
 
