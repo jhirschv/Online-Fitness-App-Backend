@@ -6,9 +6,11 @@ from rest_framework.generics import RetrieveAPIView, RetrieveUpdateAPIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
-from .models import Program, Phase, Workout, Exercise, WorkoutExercise, UserProgramProgress, PhaseProgress, WorkoutSession, ExerciseLog, ExerciseSet
-from .serializers import MyTokenObtainPairSerializer, ProgramSerializer, PhaseSerializer, WorkoutSerializer, ExerciseSerializer, WorkoutExerciseSerializer, WorkoutSessionSerializer, PhaseDetailSerializer, ExerciseSetSerializer
-from .utils import set_or_update_user_program_progress, get_current_workout, start_workout_session
+from .models import (Program, Phase, Workout, Exercise, WorkoutExercise, UserProgramProgress, PhaseProgress, WorkoutSession, ExerciseLog, ExerciseSet, 
+                    User, Message, ChatSession)
+from .serializers import (MyTokenObtainPairSerializer, ProgramSerializer, PhaseSerializer, WorkoutSerializer, ExerciseSerializer, WorkoutExerciseSerializer, 
+                        WorkoutSessionSerializer, PhaseDetailSerializer, ExerciseSetSerializer, UserSerializer, MessageSerializer, ChatSessionSerializer)
+from .utils import set_or_update_user_program_progress, get_current_workout, start_workout_session, get_chat_session, get_messages_for_session
 from rest_framework import status
 import openai
 import json
@@ -263,3 +265,26 @@ class OpenAIView(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+#APIs for Messages
+        
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+class MessageViewSet(viewsets.ModelViewSet):
+    queryset = Message.objects.all()
+    serializer_class = MessageSerializer
+
+class ChatSessionViewSet(viewsets.ModelViewSet):
+    queryset = ChatSession.objects.all()
+    serializer_class = ChatSessionSerializer
+
+class ChatSessionViewSet(viewsets.ViewSet):
+    def list(self, request, other_user_id=None):
+        chat_session = get_chat_session(request.user.id, other_user_id)
+        if chat_session:
+            messages = get_messages_for_session(chat_session)
+            serializer = MessageSerializer(messages, many=True)
+            return Response(serializer.data)
+        return Response({"message": "No chat session found"}, status=404)

@@ -2,10 +2,10 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.contrib.auth import get_user_model
-from .models import Message, ChatSession
+from .models import Message, ChatSession, User
 from django.db.models import Q
+from django.db import models
 
-User = get_user_model()
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -22,13 +22,20 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
-        message = text_data_json['message']
+        sender_id = text_data_json['senderId']
+        content = text_data_json['content']
+
+        # Use await when calling save_message
+        await self.save_message(sender_id, self.user_id_1, self.user_id_2, content)
 
         await self.channel_layer.group_send(
             self.room_group_name,
             {
                 'type': 'chat_message',
-                'message': message,
+                'message': {
+                    'sender': sender_id,
+                    'content': content,
+                },
             }
         )
 
@@ -41,25 +48,32 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     def construct_room_name(self, user_id_1, user_id_2):
         return f"chat_{min(user_id_1, user_id_2)}_{max(user_id_1, user_id_2)}"
-
+    
     @database_sync_to_async
-    def get_or_create_chat_session(self, sender_id, receiver_id):
-        sender_id, receiver_id = int(sender_id), int(receiver_id)
-        
-        sessions = ChatSession.objects.filter(participants__id=sender_id).filter(participants__id=receiver_id)
-        
-        for session in sessions:
-            if session.participants.count() == 2:
-                return session, False
-        
-        chat_session = ChatSession.objects.create()
-        chat_session.participants.add(sender_id, receiver_id)
-        return chat_session, True
+    def get_or_create_chat_session(self, user_id_1, user_id_2):
+        # Your logic to ensure two values are returned
+        user1 = User.objects.get(id=user_id_1)
+        user2 = User.objects.get(id=user_id_2)
 
-    @database_sync_to_async
-    def save_message(self, sender, user_id_1, user_id_2, content):
-        sender = User.objects.get(id=sender)
-        receiver_id = int(user_id_1) if int(user_id_1) != sender.id else int(user_id_2)
-        receiver = User.objects.get(id=receiver_id)
-        chat_session, created = self.get_or_create_chat_session(sender.id, receiver_id)
-        Message.objects.create(sender=sender, receiver=receiver, content=content, chat_session=chat_session)
+        chat_sessions = ChatSession.objects.filter(
+            participants__id__in=[user1.id, user2.id]
+        ).annotate(
+            participants_count=models.Count('participants')
+        ).filter(
+            participants_count=2
+        )
+
+        if chat_sessions.exists():
+            return chat_sessions.first(), False
+        else:
+            chat_session = ChatSession.objects.create()
+            chat_session.participants.add(user1, user2)
+            return chat_session, True
+    
+    async def save_message(self, sender_id, user_id_1, user_id_2, content):
+        sender = await database_sync_to_async(User.objects.get)(id=sender_id)
+        chat_session, created = await self.get_or_create_chat_session(user_id_1, user_id_2)
+        message = await database_sync_to_async(Message.objects.create)(
+        sender=sender, content=content, chat_session=chat_session
+        )
+        return message
