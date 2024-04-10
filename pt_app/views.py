@@ -15,6 +15,9 @@ from rest_framework import status
 import openai
 import json
 from django.conf import settings
+from django.utils.timezone import now
+from datetime import timedelta
+from collections import OrderedDict
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
@@ -288,3 +291,35 @@ class ChatSessionViewSet(viewsets.ViewSet):
             serializer = MessageSerializer(messages, many=True)
             return Response(serializer.data)
         return Response({"message": "No chat session found"}, status=404)
+    
+#dataCharts
+    
+class WorkoutSessionsLast3MonthsView(APIView):
+    def get(self, request):
+        end_date = now()
+        start_date = end_date - timedelta(days=90)  # Approximately 3 months
+
+        sessions = WorkoutSession.objects.filter(
+            user_program_progress__user=request.user,
+            date__range=(start_date, end_date)
+        ).order_by('date')
+
+        chart_data = self.process_sessions_by_week(sessions, start_date, end_date)
+        return Response(chart_data)
+
+    def process_sessions_by_week(self, sessions, start_date, end_date):
+        data = OrderedDict()
+        current_date = start_date
+        while current_date <= end_date:
+            week_str = current_date.strftime('%Y-%U')  # Year and week number
+            data[week_str] = 0
+            current_date += timedelta(days=7)
+
+        for session in sessions:
+            week_str = session.date.strftime('%Y-%U')
+            if week_str in data:
+                data[week_str] += 1
+
+        # Convert to a format suitable for Recharts
+        chart_data = [{'week': week, 'workouts': count} for week, count in data.items()]
+        return chart_data
