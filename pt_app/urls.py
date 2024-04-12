@@ -6,7 +6,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (ProgramViewSet, PhaseViewSet, WorkoutViewSet, ExerciseViewSet, WorkoutExerciseViewSet, UserProgramViewSet, 
 ProgramCreateView, ActiveProgramView, SetActiveProgramView, CurrentWorkoutView, StartWorkoutSessionView, WorkoutSessionDetailView, PhasesDetailView,
 UpdateWorkoutProgressView, UserWorkoutSessionView, ExerciseSetViewSet, UserWorkoutViewSet, SetInactiveProgramView, CreateAndActivateProgramView,
- OpenAIView, UserViewSet, MessageViewSet, ChatSessionViewSet, WorkoutSessionsLast3MonthsView)
+ OpenAIView, UserViewSet, MessageViewSet, ChatSessionViewSet, WorkoutSessionsLast3MonthsView , Exercise1RMView, ExercisesWithWeightsView, CumulativeWeightView)
 
 router = DefaultRouter()
 router.register(r'programs', ProgramViewSet)
@@ -37,7 +37,10 @@ urlpatterns = [
     path('api/openai/', OpenAIView.as_view(), name='openai-api'),
     path('chat/<int:other_user_id>/', views.ChatSessionViewSet.as_view({'get': 'list'}), name='chat-session', ),
     path('workout_sessions_last_3_months/', WorkoutSessionsLast3MonthsView.as_view(), name='workout_sessions_last_3_months'),
+    path('exercise/<int:exercise_id>/1rm/', Exercise1RMView.as_view(), name='exercise-1rm'),
+    path('exercises_with_weights/', ExercisesWithWeightsView.as_view(), name='exercises-with-weights'),
     path('api/token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('cumulative-weight/', CumulativeWeightView.as_view(), name='cumulative-weight'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api-auth/', include('rest_framework.urls')),
 ]
