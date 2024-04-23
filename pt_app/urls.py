@@ -6,7 +6,8 @@ from rest_framework.routers import DefaultRouter
 from .views import (ProgramViewSet, PhaseViewSet, WorkoutViewSet, ExerciseViewSet, WorkoutExerciseViewSet, UserProgramViewSet, 
 ProgramCreateView, ActiveProgramView, SetActiveProgramView, CurrentWorkoutView, StartWorkoutSessionView, WorkoutSessionDetailView, PhasesDetailView,
 UpdateWorkoutProgressView, UserWorkoutSessionView, ExerciseSetViewSet, UserWorkoutViewSet, SetInactiveProgramView, CreateAndActivateProgramView,
- OpenAIView, UserViewSet, MessageViewSet, ChatSessionViewSet, WorkoutSessionsLast3MonthsView , Exercise1RMView, ExercisesWithWeightsView, CumulativeWeightView)
+ OpenAIView, UserViewSet, MessageViewSet, ChatSessionViewSet, WorkoutSessionsLast3MonthsView , Exercise1RMView, ExercisesWithWeightsView, CumulativeWeightView,
+ check_active_session, EndWorkoutSession, VideoUploadAPI)
 
 router = DefaultRouter()
 router.register(r'programs', ProgramViewSet)
@@ -30,10 +31,13 @@ urlpatterns = [
     path('create-and-activate/', CreateAndActivateProgramView.as_view(), name='create_and_activate_program'),
     path('current_workout/', CurrentWorkoutView.as_view(), name='current_workout'),
     path('start_workout_session/', StartWorkoutSessionView.as_view(), name='start-workout-session'),
+    path('check_active_session/', check_active_session, name='check-active-session'),
+    path('end-session/<int:session_id>/', EndWorkoutSession.as_view(), name='end_workout_session'),
     path('workoutSession/<int:id>/', WorkoutSessionDetailView.as_view(), name='workout-session-detail'),
     path('phase_details/<int:program_id>/', PhasesDetailView.as_view(), name='phase_detail'),
     path('update_workout_progress/', UpdateWorkoutProgressView.as_view(), name='update_workout_progress'),
     path('exercise_set_update/<int:pk>/', ExerciseSetViewSet.as_view(), name='exercise_set_update'),
+    path('upload_video/<int:set_id>/', VideoUploadAPI.as_view(), name='upload_video'),
     path('api/openai/', OpenAIView.as_view(), name='openai-api'),
     path('chat/<int:other_user_id>/', views.ChatSessionViewSet.as_view({'get': 'list'}), name='chat-session', ),
     path('workout_sessions_last_3_months/', WorkoutSessionsLast3MonthsView.as_view(), name='workout_sessions_last_3_months'),

@@ -47,6 +47,9 @@ class WorkoutExercise(models.Model):
     sets = models.IntegerField()
     reps = models.IntegerField()
     note = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.exercise.name
     
 
 class UserProgramProgress(models.Model):
@@ -76,7 +79,8 @@ class WorkoutSession(models.Model):
     workout = models.ForeignKey(Workout, on_delete=models.CASCADE, related_name='sessions')
     date = models.DateTimeField(default=now, editable=True)
     completed = models.BooleanField(default=False)
-
+    active = models.BooleanField(default=True)
+    
     def __str__(self):
         return f"{self.user_program_progress.user.username}'s session: {self.workout.name} on {self.date.strftime('%Y-%m-%d')}"
 
@@ -94,7 +98,8 @@ class ExerciseSet(models.Model):
     set_number = models.IntegerField()
     reps = models.IntegerField()
     weight_used = models.IntegerField(null=True, blank=True)
-    video = models.URLField(blank=True, null=True)
+    video = models.FileField(upload_to='workout_videos/', blank=True, null=True)
+
 
     class Meta:
         ordering = ['exercise_log']

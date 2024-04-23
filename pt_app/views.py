@@ -9,7 +9,8 @@ from rest_framework.permissions import IsAuthenticated
 from .models import (Program, Phase, Workout, Exercise, WorkoutExercise, UserProgramProgress, PhaseProgress, WorkoutSession, ExerciseLog, ExerciseSet, 
                     User, Message, ChatSession)
 from .serializers import (MyTokenObtainPairSerializer, ProgramSerializer, PhaseSerializer, WorkoutSerializer, ExerciseSerializer, WorkoutExerciseSerializer, 
-                        WorkoutSessionSerializer, PhaseDetailSerializer, ExerciseSetSerializer, UserSerializer, MessageSerializer, ChatSessionSerializer)
+                        WorkoutSessionSerializer, PhaseDetailSerializer, ExerciseSetSerializer, UserSerializer, MessageSerializer, ChatSessionSerializer,
+                        ExerciseSetVideoSerializer)
 from .utils import set_or_update_user_program_progress, get_current_workout, start_workout_session, get_chat_session, get_messages_for_session
 from rest_framework import status
 import openai
@@ -19,6 +20,7 @@ from django.utils.timezone import now
 from datetime import timedelta
 from collections import OrderedDict
 from django.db.models import Exists, OuterRef
+from rest_framework.decorators import api_view, permission_classes
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
@@ -59,10 +61,22 @@ class ExerciseViewSet(viewsets.ModelViewSet):
     queryset = Exercise.objects.all()
     serializer_class = ExerciseSerializer
 
+class VideoUploadAPI(APIView):
+    def patch(self, request, set_id):
+        try:
+            exercise_set = ExerciseSet.objects.get(id=set_id)
+            serializer = ExerciseSetVideoSerializer(exercise_set, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'message': 'Video uploaded successfully', 'status': 'success'}, status=status.HTTP_200_OK)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except ExerciseSet.DoesNotExist:
+            return Response({'error': 'ExerciseSet not found'}, status=status.HTTP_404_NOT_FOUND)
+
 class WorkoutExerciseViewSet(viewsets.ModelViewSet):
     queryset = WorkoutExercise.objects.all()
     serializer_class = WorkoutExerciseSerializer
-    
 
 class ProgramCreateView(APIView):
     def post(self, request, *args, **kwargs):
@@ -162,10 +176,53 @@ class StartWorkoutSessionView(APIView):
     def post(self, request):
         workout_id = request.data.get('workout_id')
         try:
+            # Ensure there is no other active session
+            if WorkoutSession.objects.filter(
+                user_program_progress__user=request.user,
+                user_program_progress__is_active=True,
+                active=True
+            ).exists():
+                return Response({'error': 'Another workout session is already active.'}, status=400)
+
             workout_session = start_workout_session(request.user, workout_id)
             return Response({'message': 'Workout session started successfully.', 'session_id': workout_session.id})
+
         except Exception as e:
             return Response({'error': str(e)}, status=400)
+        
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def check_active_session(request):
+    current_user = request.user
+    active_session = WorkoutSession.objects.filter(
+        user_program_progress__user=current_user,
+        active=True,
+        completed=False
+    ).first()
+
+    if active_session:
+        # Serialize the active session
+        serializer = WorkoutSessionSerializer(active_session)
+        return Response(serializer.data)
+    else:
+        # If no active session is found, return a different response
+        return Response({'active': False})
+    
+class EndWorkoutSession(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, session_id):
+        try:
+            session = WorkoutSession.objects.get(id=session_id)
+            if not session.completed:
+                session.completed = True
+                session.active = False
+                session.save()
+                return Response({'status': 'success', 'message': 'Workout session ended successfully.'})
+            else:
+                return Response({'status': 'error', 'message': 'Session already completed.'}, status=status.HTTP_400_BAD_REQUEST)
+        except WorkoutSession.DoesNotExist:
+            return Response({'status': 'error', 'message': 'Session not found.'}, status=status.HTTP_404_NOT_FOUND)
         
 class UserWorkoutSessionView(viewsets.ModelViewSet):
     serializer_class = WorkoutSessionSerializer
@@ -231,8 +288,10 @@ class ExerciseSetViewSet(RetrieveUpdateAPIView):
 class OpenAIView(APIView):
     def post(self, request, *args, **kwargs):
         user_prompt = request.data.get('prompt')
-        if not user_prompt:
-            return Response({"error": "No prompt provided"}, status=status.HTTP_400_BAD_REQUEST)
+        phase_id = request.data.get('phase')
+
+        if not user_prompt or not phase_id:
+            return Response({"error": "Missing prompt or phase"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             openai.api_key = settings.API_KEY
@@ -259,6 +318,7 @@ class OpenAIView(APIView):
     ]
             )
             workout_data = json.loads(response.choices[0].message.content)
+            workout_data['phase'] = phase_id
 
             serializer = WorkoutSerializer(data=workout_data, context={'request': request})
             if serializer.is_valid():

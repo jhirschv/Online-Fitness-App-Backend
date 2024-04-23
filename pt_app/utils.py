@@ -58,7 +58,8 @@ def start_workout_session(user, workout_id):
         workout_session = WorkoutSession.objects.create(
             user_program_progress=user_program_progress,
             workout_id=workout_id,
-            completed=False
+            completed=False,
+            active=True  # Start session as active
         )
 
         workout_exercises = WorkoutExercise.objects.filter(workout_id=workout_id)

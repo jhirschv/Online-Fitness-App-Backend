@@ -116,6 +116,11 @@ class ExerciseSetSerializer(serializers.ModelSerializer):
         model = ExerciseSet
         fields = ['id', 'exercise_log', 'set_number', 'reps', 'weight_used', 'video']
 
+class ExerciseSetVideoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExerciseSet
+        fields = ['video']
+
 class ExerciseLogSerializer(serializers.ModelSerializer):
     sets = ExerciseSetSerializer(many=True, read_only=True, source='exercise_sets')
     workout_exercise = WorkoutExerciseSerializer(read_only=True)
@@ -130,7 +135,7 @@ class WorkoutSessionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WorkoutSession
-        fields = ['id', 'workout', 'date', 'completed', 'exercise_logs']
+        fields = ['id', 'workout', 'date', 'completed', 'exercise_logs', 'active']
 
 class PhaseDetailSerializer(serializers.ModelSerializer):
     workouts_by_week = serializers.SerializerMethodField()

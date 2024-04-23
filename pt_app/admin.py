@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import Program, Phase, Workout, Exercise, WorkoutExercise, User, UserProgramProgress, PhaseProgress, WorkoutSession, ExerciseLog, ExerciseSet, Message, ChatSession
+from django.utils.html import format_html
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
@@ -13,7 +14,7 @@ class ProgramAdmin(admin.ModelAdmin):
 
 @admin.register(Phase)
 class PhaseAdmin(admin.ModelAdmin):
-    list_display = ('program', 'name', 'weeks')
+    list_display = ('program', 'name', 'weeks', 'id')
     search_fields = ('program__name',)
     list_filter = ('program',)
 
@@ -41,10 +42,31 @@ class UserProgramProgressAdmin(admin.ModelAdmin):
     list_filter = ('program', 'current_phase', 'is_active')
     date_hierarchy = 'start_date'  # Enables a quick date drill down
 
+class ExerciseSetAdmin(admin.ModelAdmin):
+    list_display = ('exercise_log', 'set_number', 'reps', 'weight_used', 'video_link', 'id')
+    list_filter = ('exercise_log', 'set_number')
+    search_fields = ('exercise_log__workout_exercise__exercise__name', 'set_number')
+    ordering = ('exercise_log', 'set_number')
+    fieldsets = (
+        (None, {
+            'fields': ('exercise_log', 'set_number')
+        }),
+        ('Details', {
+            'fields': ('reps', 'weight_used', 'video')
+        }),
+    )
+
+    def video_link(self, obj):
+        if obj.video:
+            return format_html('<a href="{0}" target="_blank">View Video</a>', obj.video.url)
+        return "No Video"
+
+    video_link.short_description = "Video"
+
 admin.site.register(PhaseProgress)
 admin.site.register(WorkoutSession)
 admin.site.register(ExerciseLog)
-admin.site.register(ExerciseSet)
+admin.site.register(ExerciseSet, ExerciseSetAdmin)
 admin.site.register(Message)
 admin.site.register(ChatSession)
 
