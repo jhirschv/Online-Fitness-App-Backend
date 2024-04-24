@@ -99,6 +99,7 @@ class ExerciseSet(models.Model):
     reps = models.IntegerField()
     weight_used = models.IntegerField(null=True, blank=True)
     video = models.FileField(upload_to='workout_videos/', blank=True, null=True)
+    is_logged = models.BooleanField(default=False)
 
 
     class Meta:

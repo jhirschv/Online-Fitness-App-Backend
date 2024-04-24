@@ -114,7 +114,7 @@ class ProgramSerializer(serializers.ModelSerializer):
 class ExerciseSetSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExerciseSet
-        fields = ['id', 'exercise_log', 'set_number', 'reps', 'weight_used', 'video']
+        fields = ['id', 'exercise_log', 'set_number', 'reps', 'weight_used', 'video', 'is_logged']
 
 class ExerciseSetVideoSerializer(serializers.ModelSerializer):
     class Meta:

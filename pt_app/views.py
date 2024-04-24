@@ -73,6 +73,17 @@ class VideoUploadAPI(APIView):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except ExerciseSet.DoesNotExist:
             return Response({'error': 'ExerciseSet not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+class DeleteVideoAPIView(APIView):
+    def delete(self, request, set_id):
+        try:
+            exercise_set = ExerciseSet.objects.get(id=set_id)
+            exercise_set.video.delete()  # This deletes the file from storage and removes the association
+            exercise_set.video = None  # Ensure the field is set to None after deletion
+            exercise_set.save()
+            return Response({'message': 'Video deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+        except ExerciseSet.DoesNotExist:
+            return Response({'error': 'ExerciseSet not found'}, status=status.HTTP_404_NOT_FOUND)
 
 class WorkoutExerciseViewSet(viewsets.ModelViewSet):
     queryset = WorkoutExercise.objects.all()
