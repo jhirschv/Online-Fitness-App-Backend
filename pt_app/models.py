@@ -96,7 +96,7 @@ class ExerciseLog(models.Model):
 class ExerciseSet(models.Model):
     exercise_log = models.ForeignKey(ExerciseLog, related_name='exercise_sets', on_delete=models.CASCADE)
     set_number = models.IntegerField()
-    reps = models.IntegerField()
+    reps = models.IntegerField(null=True, blank=True)
     weight_used = models.IntegerField(null=True, blank=True)
     video = models.FileField(upload_to='workout_videos/', blank=True, null=True)
     is_logged = models.BooleanField(default=False)

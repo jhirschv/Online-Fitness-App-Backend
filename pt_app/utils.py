@@ -74,7 +74,7 @@ def start_workout_session(user, workout_id):
                 ExerciseSet.objects.create(
                     exercise_log=exercise_log,
                     set_number=set_number,
-                    reps=0,
+                    reps=None,
                     weight_used=None
                 )
     return workout_session

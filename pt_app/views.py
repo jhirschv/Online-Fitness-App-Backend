@@ -292,6 +292,25 @@ class ExerciseSetViewSet(RetrieveUpdateAPIView):
     # Custom update logic here
         serializer.save()
 
+class ExerciseSetHistoryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, exercise_id):
+        # Filter WorkoutExercises by exercise_id
+        workout_exercises = WorkoutExercise.objects.filter(exercise__id=exercise_id)
+
+        # Retrieve all the ExerciseLog ids associated with these WorkoutExercises
+        workout_exercises_ids = [we.id for we in workout_exercises]
+
+        # Fetch ExerciseSets linked through these WorkoutExercises ids and filter by weight_used not null or zero
+        exercise_sets = ExerciseSet.objects.filter(
+            exercise_log__workout_exercise__id__in=workout_exercises_ids,
+            exercise_log__workout_session__user_program_progress__user=request.user,
+            weight_used__gt=0  # Filters out ExerciseSets where weight_used is greater than 0
+        )
+        serializer = ExerciseSetSerializer(exercise_sets, many=True)
+        return Response(serializer.data)
+
 
 #openai api
 

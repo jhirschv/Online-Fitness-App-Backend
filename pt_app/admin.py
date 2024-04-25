@@ -63,9 +63,17 @@ class ExerciseSetAdmin(admin.ModelAdmin):
 
     video_link.short_description = "Video"
 
+class ExerciseLogAdmin(admin.ModelAdmin):
+    list_display = ('id', 'workout_session', 'workout_exercise', 'sets_completed', 'note')  # Add other fields as needed
+
+    def get_queryset(self, request):
+        # This method can be used to modify the queryset. For example, you can optimize queries by selecting related fields
+        qs = super().get_queryset(request)
+        return qs.select_related('workout_session', 'workout_exercise')
+
 admin.site.register(PhaseProgress)
 admin.site.register(WorkoutSession)
-admin.site.register(ExerciseLog)
+admin.site.register(ExerciseLog, ExerciseLogAdmin)
 admin.site.register(ExerciseSet, ExerciseSetAdmin)
 admin.site.register(Message)
 admin.site.register(ChatSession)

@@ -7,7 +7,7 @@ from .views import (ProgramViewSet, PhaseViewSet, WorkoutViewSet, ExerciseViewSe
 ProgramCreateView, ActiveProgramView, SetActiveProgramView, CurrentWorkoutView, StartWorkoutSessionView, WorkoutSessionDetailView, PhasesDetailView,
 UpdateWorkoutProgressView, UserWorkoutSessionView, ExerciseSetViewSet, UserWorkoutViewSet, SetInactiveProgramView, CreateAndActivateProgramView,
  OpenAIView, UserViewSet, MessageViewSet, ChatSessionViewSet, WorkoutSessionsLast3MonthsView , Exercise1RMView, ExercisesWithWeightsView, CumulativeWeightView,
- check_active_session, EndWorkoutSession, VideoUploadAPI, DeleteVideoAPIView)
+ check_active_session, EndWorkoutSession, VideoUploadAPI, DeleteVideoAPIView, ExerciseSetHistoryView)
 
 router = DefaultRouter()
 router.register(r'programs', ProgramViewSet)
@@ -39,6 +39,7 @@ urlpatterns = [
     path('exercise_set_update/<int:pk>/', ExerciseSetViewSet.as_view(), name='exercise_set_update'),
     path('upload_video/<int:set_id>/', VideoUploadAPI.as_view(), name='upload_video'),
     path('delete_video/<int:set_id>/', DeleteVideoAPIView.as_view(), name='delete-video'),
+    path('exercise-sets/history/<int:exercise_id>/', ExerciseSetHistoryView.as_view(), name='exercise-set-history'),
     path('api/openai/', OpenAIView.as_view(), name='openai-api'),
     path('chat/<int:other_user_id>/', views.ChatSessionViewSet.as_view({'get': 'list'}), name='chat-session', ),
     path('workout_sessions_last_3_months/', WorkoutSessionsLast3MonthsView.as_view(), name='workout_sessions_last_3_months'),
