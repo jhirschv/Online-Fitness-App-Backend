@@ -7,7 +7,8 @@ from .views import (ProgramViewSet, PhaseViewSet, WorkoutViewSet, ExerciseViewSe
 ProgramCreateView, ActiveProgramView, SetActiveProgramView, CurrentWorkoutView, StartWorkoutSessionView, WorkoutSessionDetailView, PhasesDetailView,
 UpdateWorkoutProgressView, UserWorkoutSessionView, ExerciseSetViewSet, UserWorkoutViewSet, SetInactiveProgramView, CreateAndActivateProgramView,
  OpenAIView, UserViewSet, MessageViewSet, ChatSessionViewSet, WorkoutSessionsLast3MonthsView , Exercise1RMView, ExercisesWithWeightsView, CumulativeWeightView,
- check_active_session, EndWorkoutSession, VideoUploadAPI, DeleteVideoAPIView, ExerciseSetHistoryView)
+ check_active_session, EndWorkoutSession, VideoUploadAPI, DeleteVideoAPIView, ExerciseSetHistoryView, ExerciseLogViewSet, ExerciseSetCreateAPIView,
+ DeleteLastExerciseSetAPIView)
 
 router = DefaultRouter()
 router.register(r'programs', ProgramViewSet)
@@ -37,6 +38,9 @@ urlpatterns = [
     path('phase_details/<int:program_id>/', PhasesDetailView.as_view(), name='phase_detail'),
     path('update_workout_progress/', UpdateWorkoutProgressView.as_view(), name='update_workout_progress'),
     path('exercise_set_update/<int:pk>/', ExerciseSetViewSet.as_view(), name='exercise_set_update'),
+    path('exercise-logs/<int:log_id>/exercise-sets/', ExerciseSetCreateAPIView.as_view(), name='exercise-set-create'),
+    path('exercise-logs/<int:log_id>/delete-last-set/', DeleteLastExerciseSetAPIView.as_view(), name='delete-last-set'),
+    path('exercise_log_update/<int:pk>/', ExerciseLogViewSet.as_view(), name='exercise_log_update'),
     path('upload_video/<int:set_id>/', VideoUploadAPI.as_view(), name='upload_video'),
     path('delete_video/<int:set_id>/', DeleteVideoAPIView.as_view(), name='delete-video'),
     path('exercise-sets/history/<int:exercise_id>/', ExerciseSetHistoryView.as_view(), name='exercise-set-history'),

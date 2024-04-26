@@ -10,7 +10,7 @@ from .models import (Program, Phase, Workout, Exercise, WorkoutExercise, UserPro
                     User, Message, ChatSession)
 from .serializers import (MyTokenObtainPairSerializer, ProgramSerializer, PhaseSerializer, WorkoutSerializer, ExerciseSerializer, WorkoutExerciseSerializer, 
                         WorkoutSessionSerializer, PhaseDetailSerializer, ExerciseSetSerializer, UserSerializer, MessageSerializer, ChatSessionSerializer,
-                        ExerciseSetVideoSerializer)
+                        ExerciseSetVideoSerializer, ExerciseLogSerializer)
 from .utils import set_or_update_user_program_progress, get_current_workout, start_workout_session, get_chat_session, get_messages_for_session
 from rest_framework import status
 import openai
@@ -60,6 +60,62 @@ class UserWorkoutViewSet(viewsets.ModelViewSet):
 class ExerciseViewSet(viewsets.ModelViewSet):
     queryset = Exercise.objects.all()
     serializer_class = ExerciseSerializer
+
+class ExerciseSetCreateAPIView(APIView):
+    def post(self, request, log_id):
+        # Retrieve the associated ExerciseLog
+        exercise_log = ExerciseLog.objects.get(id=log_id)
+
+        # Determine the next set number
+        if exercise_log.exercise_sets.count() > 0:
+            last_set_number = exercise_log.exercise_sets.last().set_number
+        else:
+            last_set_number = 0
+
+        new_set_number = last_set_number + 1
+
+        # Create a new ExerciseSet with the next set number
+        exercise_set = ExerciseSet(
+            exercise_log=exercise_log,
+            set_number=new_set_number,
+            reps=request.data.get('reps', None),  # Optional data from request
+            weight_used=request.data.get('weight_used', None)  # Optional data from request
+        )
+        exercise_set.save()
+
+        # Optionally update the ExerciseLog sets_completed field
+        exercise_log.sets_completed += 1
+        exercise_log.save()
+
+        # Serialize and return the new ExerciseSet
+        serializer = ExerciseSetSerializer(exercise_set)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+class DeleteLastExerciseSetAPIView(APIView):
+    def delete(self, request, log_id):
+        try:
+            exercise_log = ExerciseLog.objects.get(id=log_id)
+        except ExerciseLog.DoesNotExist:
+            return Response({'error': 'Exercise log not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Retrieve the corresponding WorkoutExercise
+        workout_exercise = exercise_log.workout_exercise
+
+        # Get the last ExerciseSet
+        last_exercise_set = exercise_log.exercise_sets.order_by('set_number').last()
+
+        if last_exercise_set:
+            # Check if the current number of sets in the log exceeds the defined number of sets in the workout
+            if exercise_log.exercise_sets.count() > workout_exercise.sets:
+                last_exercise_set.delete()
+                # Update sets_completed if necessary
+                exercise_log.sets_completed = max(0, exercise_log.sets_completed - 1)
+                exercise_log.save()
+                return Response({'message': 'Last set deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response({'error': 'Cannot delete the set. The number of sets does not exceed the workout plan.'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'error': 'No sets to delete'}, status=status.HTTP_404_NOT_FOUND)
 
 class VideoUploadAPI(APIView):
     def patch(self, request, set_id):
@@ -283,6 +339,14 @@ class UpdateWorkoutProgressView(APIView):
             phase_prog.save()
 
             return Response({'status': 'success', 'message': 'Workout progress updated'})
+        
+class ExerciseLogViewSet(RetrieveUpdateAPIView):
+    queryset = ExerciseLog.objects.all()
+    serializer_class = ExerciseLogSerializer
+
+    def perform_update(self, serializer):
+    # Custom update logic here
+        serializer.save()
 
 class ExerciseSetViewSet(RetrieveUpdateAPIView):
     queryset = ExerciseSet.objects.all()

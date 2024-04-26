@@ -103,7 +103,7 @@ class ExerciseSet(models.Model):
 
 
     class Meta:
-        ordering = ['exercise_log']
+        ordering = ['set_number']
 
     def __str__(self):
         return f"Set {self.set_number} for {self.exercise_log.workout_exercise.exercise.name}"
