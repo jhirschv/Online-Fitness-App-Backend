@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import Program, Phase, Workout, Exercise, WorkoutExercise, User, WorkoutSession, ExerciseLog, ExerciseSet, Message, ChatSession
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
+from django.db.models import Max
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -62,10 +63,16 @@ class WorkoutSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def create(self, validated_data):
-        workout_exercises_data = validated_data.pop('workout_exercises')
+        workout_exercises_data = validated_data.pop('workout_exercises', [])
+        
+        # Check if 'order' is provided, if not, determine the next order value
+        if 'order' not in validated_data or validated_data['order'] is None:
+            current_max_order = Workout.objects.filter(phase=validated_data['phase']).aggregate(Max('order'))['order__max']
+            validated_data['order'] = (current_max_order or 0) + 1
+
         workout = Workout.objects.create(**validated_data)
         for workout_exercise_data in workout_exercises_data:
-            workout_exercise_serializer = WorkoutExerciseSerializer(data=workout_exercise_data)
+            workout_exercise_serializer = WorkoutExerciseSerializer(data=workout_exercise_data, context={'workout': workout})
             if workout_exercise_serializer.is_valid(raise_exception=True):
                 workout_exercise_serializer.save(workout=workout)
         return workout
@@ -79,19 +86,17 @@ class WorkoutSerializer(serializers.ModelSerializer):
         instance.save()
 
         # Clear existing workout_exercises and recreate them
-        # This is a simple approach; for more complex scenarios, you might update existing instances
         instance.workout_exercises.all().delete()
-
-        # Handle creating new WorkoutExercise instances
         for workout_exercise_data in workout_exercises_data:
-            exercise_name = workout_exercise_data.pop('exercise_name', None)
-            exercise = None
-            if exercise_name:
-                exercise, created = Exercise.objects.get_or_create(name=exercise_name)
-            
-            WorkoutExercise.objects.create(workout=instance, exercise=exercise, **workout_exercise_data)
+            workout_exercise_serializer = WorkoutExerciseSerializer(data=workout_exercise_data, context={'workout': instance})
+            if workout_exercise_serializer.is_valid(raise_exception=True):
+                workout_exercise_serializer.save(workout=instance)
 
         return instance
+    
+class WorkoutOrderSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    order = serializers.IntegerField()
     
 class PhaseSerializer(serializers.ModelSerializer):
     # Serialize nested Workouts within each Phase
