@@ -10,7 +10,7 @@ from .models import (Program, Phase, Workout, Exercise, WorkoutExercise, UserPro
                     User, Message, ChatSession)
 from .serializers import (MyTokenObtainPairSerializer, ProgramSerializer, PhaseSerializer, WorkoutSerializer, ExerciseSerializer, WorkoutExerciseSerializer, 
                         WorkoutSessionSerializer, PhaseDetailSerializer, ExerciseSetSerializer, UserSerializer, MessageSerializer, ChatSessionSerializer,
-                        ExerciseSetVideoSerializer, ExerciseLogSerializer)
+                        ExerciseSetVideoSerializer, ExerciseLogSerializer, WorkoutOrderSerializer)
 from .utils import set_or_update_user_program_progress, get_current_workout, start_workout_session, get_chat_session, get_messages_for_session
 from rest_framework import status
 import openai
@@ -21,6 +21,7 @@ from datetime import timedelta
 from collections import OrderedDict
 from django.db.models import Exists, OuterRef
 from rest_framework.decorators import api_view, permission_classes
+from django.core.exceptions import ObjectDoesNotExist
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
@@ -49,6 +50,26 @@ class WorkoutViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(creator=self.request.user)
+
+class UpdateWorkoutOrderAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = WorkoutOrderSerializer(data=request.data, many=True)
+        if serializer.is_valid():
+            updates = []
+            errors = []
+            for item in serializer.validated_data:
+                try:
+                    workout = Workout.objects.get(id=item['id'])
+                    workout.order = item['order']
+                    workout.save()
+                    updates.append({'id': workout.id, 'order': workout.order})
+                except ObjectDoesNotExist:
+                    errors.append({'id': item['id'], 'error': 'Workout does not exist'})
+            
+            if errors:
+                return Response({'status': 'partial_success', 'updated': updates, 'errors': errors}, status=status.HTTP_206_PARTIAL_CONTENT)
+            return Response({'status': 'success', 'updated': updates}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class UserWorkoutViewSet(viewsets.ModelViewSet):
     queryset = Workout.objects.all()

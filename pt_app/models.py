@@ -29,6 +29,7 @@ class Workout(models.Model):
     phase = models.ForeignKey(Phase, related_name='workouts', on_delete=models.CASCADE, null=True)
     name = models.CharField(max_length=255)
     creator = models.ForeignKey(User, related_name='created_workouts', on_delete=models.CASCADE)
+    order = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return self.name
