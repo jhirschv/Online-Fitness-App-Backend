@@ -8,7 +8,7 @@ ProgramCreateView, ActiveProgramView, SetActiveProgramView, CurrentWorkoutView, 
 UpdateWorkoutProgressView, UserWorkoutSessionView, ExerciseSetViewSet, UserWorkoutViewSet, SetInactiveProgramView, CreateAndActivateProgramView,
  OpenAIView, UserViewSet, MessageViewSet, ChatSessionViewSet, WorkoutSessionsLast3MonthsView , Exercise1RMView, ExercisesWithWeightsView, CumulativeWeightView,
  check_active_session, EndWorkoutSession, VideoUploadAPI, DeleteVideoAPIView, ExerciseSetHistoryView, ExerciseLogViewSet, ExerciseSetCreateAPIView,
- DeleteLastExerciseSetAPIView, UpdateWorkoutOrderAPIView)
+ DeleteLastExerciseSetAPIView, UpdateWorkoutOrderAPIView, UpdateExerciseOrderAPIView)
 
 router = DefaultRouter()
 router.register(r'programs', ProgramViewSet)
@@ -27,6 +27,7 @@ urlpatterns = [
     path('', include(router.urls)),
     path('create_program/', ProgramCreateView.as_view(), name='program-create'),
     path('update_workout_order/', UpdateWorkoutOrderAPIView.as_view(), name='update_workout_exercise_order'),
+    path('update_exercise_order/', UpdateExerciseOrderAPIView.as_view(), name='update_exercise_order'),
     path('get_active_program/', ActiveProgramView.as_view(), name='get_active_program'),
     path('set_active_program/', SetActiveProgramView.as_view(), name='set_active_program'),
     path('set_inactive_program/', SetInactiveProgramView.as_view(), name='set_inactive_program'),

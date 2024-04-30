@@ -10,7 +10,7 @@ from .models import (Program, Phase, Workout, Exercise, WorkoutExercise, UserPro
                     User, Message, ChatSession)
 from .serializers import (MyTokenObtainPairSerializer, ProgramSerializer, PhaseSerializer, WorkoutSerializer, ExerciseSerializer, WorkoutExerciseSerializer, 
                         WorkoutSessionSerializer, PhaseDetailSerializer, ExerciseSetSerializer, UserSerializer, MessageSerializer, ChatSessionSerializer,
-                        ExerciseSetVideoSerializer, ExerciseLogSerializer, WorkoutOrderSerializer)
+                        ExerciseSetVideoSerializer, ExerciseLogSerializer, WorkoutOrderSerializer, ExerciseOrderSerializer)
 from .utils import set_or_update_user_program_progress, get_current_workout, start_workout_session, get_chat_session, get_messages_for_session
 from rest_framework import status
 import openai
@@ -69,6 +69,17 @@ class UpdateWorkoutOrderAPIView(APIView):
             if errors:
                 return Response({'status': 'partial_success', 'updated': updates, 'errors': errors}, status=status.HTTP_206_PARTIAL_CONTENT)
             return Response({'status': 'success', 'updated': updates}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class UpdateExerciseOrderAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = ExerciseOrderSerializer(data=request.data, many=True)
+        if serializer.is_valid():
+            for item in serializer.validated_data:
+                exercise = WorkoutExercise.objects.get(id=item['id'])
+                exercise.order = item['order']
+                exercise.save()
+            return Response({'status': 'success'}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class UserWorkoutViewSet(viewsets.ModelViewSet):

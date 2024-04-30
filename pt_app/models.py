@@ -48,6 +48,10 @@ class WorkoutExercise(models.Model):
     sets = models.IntegerField()
     reps = models.IntegerField()
     note = models.TextField(blank=True, null=True)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order']
 
     def __str__(self):
         return self.exercise.name

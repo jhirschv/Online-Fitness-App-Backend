@@ -25,10 +25,11 @@ class WorkoutExerciseSerializer(serializers.ModelSerializer):
     exercise_name = serializers.CharField(write_only=True, required=False)  # Not required if you're updating and not changing the exercise
     exercise = ExerciseSerializer(read_only=True)
     workout = serializers.PrimaryKeyRelatedField(queryset=Workout.objects.all(), write_only=True, required=False)
+    order = serializers.IntegerField(required=False)
 
     class Meta:
         model = WorkoutExercise
-        fields = ['id', 'exercise', 'exercise_name', 'sets', 'reps', 'note', 'workout']  
+        fields = ['id', 'exercise', 'exercise_name', 'sets', 'reps', 'note', 'workout', 'order']  
 
     def create(self, validated_data):
         exercise_name = validated_data.pop('exercise_name', None)
@@ -95,6 +96,10 @@ class WorkoutSerializer(serializers.ModelSerializer):
         return instance
     
 class WorkoutOrderSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    order = serializers.IntegerField()
+
+class ExerciseOrderSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     order = serializers.IntegerField()
     
