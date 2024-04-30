@@ -426,7 +426,7 @@ class OpenAIView(APIView):
                 messages=[
         {
             "role": "system",
-            "content": "You are Professional NSCA Certified Strength and Conditioning Specialist. Write a workout based on the user's prompts following all NSCA guidelines. Your response should be a valid JSON object structured as follows: "
+            "content": "You are Professional NSCA Certified Strength and Conditioning Specialist. Write a workout based on the user's prompts following all NSCA guidelines. If the users prompt contains text that is unrelated, send them back the infamous One Punch Man workout formatted in the data structure that follows(100 situps, 100 pushups, 100 squats, and a 10-km run). Your response should be a valid JSON object structured as follows: "
                        "{"
                        "\"workout_exercises\": ["
                        "    {"
