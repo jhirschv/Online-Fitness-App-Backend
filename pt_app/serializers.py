@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Program, Phase, Workout, Exercise, WorkoutExercise, User, WorkoutSession, ExerciseLog, ExerciseSet, Message, ChatSession
+from .models import Program, Workout, Exercise, WorkoutExercise, User, WorkoutSession, ExerciseLog, ExerciseSet, Message, ChatSession
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.db.models import Max
@@ -68,7 +68,7 @@ class WorkoutSerializer(serializers.ModelSerializer):
         
         # Check if 'order' is provided, if not, determine the next order value
         if 'order' not in validated_data or validated_data['order'] is None:
-            current_max_order = Workout.objects.filter(phase=validated_data['phase']).aggregate(Max('order'))['order__max']
+            current_max_order = Workout.objects.filter(program=validated_data['program']).aggregate(Max('order'))['order__max']
             validated_data['order'] = (current_max_order or 0) + 1
 
         workout = Workout.objects.create(**validated_data)
@@ -102,18 +102,10 @@ class WorkoutOrderSerializer(serializers.Serializer):
 class ExerciseOrderSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     order = serializers.IntegerField()
-    
-class PhaseSerializer(serializers.ModelSerializer):
-    # Serialize nested Workouts within each Phase
-    workouts = WorkoutSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Phase
-        fields = '__all__'
 
 class ProgramSerializer(serializers.ModelSerializer):
     creator = UserSerializer(read_only=True)
-    phases = PhaseSerializer(many=True, read_only=True)
+    workouts = WorkoutSerializer(many=True, read_only=True)
 
     class Meta:
         model = Program
@@ -146,24 +138,6 @@ class WorkoutSessionSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkoutSession
         fields = ['id', 'workout', 'date', 'completed', 'exercise_logs', 'active']
-
-class PhaseDetailSerializer(serializers.ModelSerializer):
-    workouts_by_week = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Phase
-        fields = ['id', 'name', 'workouts_by_week']
-
-    def get_workouts_by_week(self, phase):
-        weeks_data = []
-        workouts = WorkoutSerializer(phase.workouts.all(), many=True).data
-        for week_number in range(1, phase.weeks + 1):
-            week_data = {
-                'week': week_number,
-                'workouts': workouts
-            }
-            weeks_data.append(week_data)
-        return weeks_data
     
 #Message feature
     

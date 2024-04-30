@@ -3,9 +3,9 @@ from . import views
 from rest_framework_simplejwt.views import TokenRefreshView
 from .views import MyTokenObtainPairView
 from rest_framework.routers import DefaultRouter
-from .views import (ProgramViewSet, PhaseViewSet, WorkoutViewSet, ExerciseViewSet, WorkoutExerciseViewSet, UserProgramViewSet, 
-ProgramCreateView, ActiveProgramView, SetActiveProgramView, CurrentWorkoutView, StartWorkoutSessionView, WorkoutSessionDetailView, PhasesDetailView,
-UpdateWorkoutProgressView, UserWorkoutSessionView, ExerciseSetViewSet, UserWorkoutViewSet, SetInactiveProgramView, CreateAndActivateProgramView,
+from .views import (ProgramViewSet, WorkoutViewSet, ExerciseViewSet, WorkoutExerciseViewSet, UserProgramViewSet, 
+ProgramCreateView, ActiveProgramView, SetActiveProgramView, StartWorkoutSessionView, WorkoutSessionDetailView,
+ UserWorkoutSessionView, ExerciseSetViewSet, UserWorkoutViewSet, SetInactiveProgramView, CreateAndActivateProgramView,
  OpenAIView, UserViewSet, MessageViewSet, ChatSessionViewSet, WorkoutSessionsLast3MonthsView , Exercise1RMView, ExercisesWithWeightsView, CumulativeWeightView,
  check_active_session, EndWorkoutSession, VideoUploadAPI, DeleteVideoAPIView, ExerciseSetHistoryView, ExerciseLogViewSet, ExerciseSetCreateAPIView,
  DeleteLastExerciseSetAPIView, UpdateWorkoutOrderAPIView, UpdateExerciseOrderAPIView)
@@ -13,7 +13,6 @@ UpdateWorkoutProgressView, UserWorkoutSessionView, ExerciseSetViewSet, UserWorko
 router = DefaultRouter()
 router.register(r'programs', ProgramViewSet)
 router.register(r'user_programs', UserProgramViewSet, basename='user_program')
-router.register(r'phases', PhaseViewSet)
 router.register(r'workouts', WorkoutViewSet)
 router.register(r'user_workouts', UserWorkoutViewSet)
 router.register(r'exercises', ExerciseViewSet)
@@ -32,13 +31,10 @@ urlpatterns = [
     path('set_active_program/', SetActiveProgramView.as_view(), name='set_active_program'),
     path('set_inactive_program/', SetInactiveProgramView.as_view(), name='set_inactive_program'),
     path('create-and-activate/', CreateAndActivateProgramView.as_view(), name='create_and_activate_program'),
-    path('current_workout/', CurrentWorkoutView.as_view(), name='current_workout'),
     path('start_workout_session/', StartWorkoutSessionView.as_view(), name='start-workout-session'),
     path('check_active_session/', check_active_session, name='check-active-session'),
     path('end-session/<int:session_id>/', EndWorkoutSession.as_view(), name='end_workout_session'),
     path('workoutSession/<int:id>/', WorkoutSessionDetailView.as_view(), name='workout-session-detail'),
-    path('phase_details/<int:program_id>/', PhasesDetailView.as_view(), name='phase_detail'),
-    path('update_workout_progress/', UpdateWorkoutProgressView.as_view(), name='update_workout_progress'),
     path('exercise_set_update/<int:pk>/', ExerciseSetViewSet.as_view(), name='exercise_set_update'),
     path('exercise-logs/<int:log_id>/exercise-sets/', ExerciseSetCreateAPIView.as_view(), name='exercise-set-create'),
     path('exercise-logs/<int:log_id>/delete-last-set/', DeleteLastExerciseSetAPIView.as_view(), name='delete-last-set'),

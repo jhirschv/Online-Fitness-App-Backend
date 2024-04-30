@@ -6,12 +6,12 @@ from rest_framework.generics import RetrieveAPIView, RetrieveUpdateAPIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
-from .models import (Program, Phase, Workout, Exercise, WorkoutExercise, UserProgramProgress, PhaseProgress, WorkoutSession, ExerciseLog, ExerciseSet, 
+from .models import (Program, Workout, Exercise, WorkoutExercise, UserProgramProgress, WorkoutSession, ExerciseLog, ExerciseSet, 
                     User, Message, ChatSession)
-from .serializers import (MyTokenObtainPairSerializer, ProgramSerializer, PhaseSerializer, WorkoutSerializer, ExerciseSerializer, WorkoutExerciseSerializer, 
-                        WorkoutSessionSerializer, PhaseDetailSerializer, ExerciseSetSerializer, UserSerializer, MessageSerializer, ChatSessionSerializer,
+from .serializers import (MyTokenObtainPairSerializer, ProgramSerializer, WorkoutSerializer, ExerciseSerializer, WorkoutExerciseSerializer, 
+                        WorkoutSessionSerializer, ExerciseSetSerializer, UserSerializer, MessageSerializer, ChatSessionSerializer,
                         ExerciseSetVideoSerializer, ExerciseLogSerializer, WorkoutOrderSerializer, ExerciseOrderSerializer)
-from .utils import set_or_update_user_program_progress, get_current_workout, start_workout_session, get_chat_session, get_messages_for_session
+from .utils import set_or_update_user_program_progress, start_workout_session, get_chat_session, get_messages_for_session
 from rest_framework import status
 import openai
 import json
@@ -39,10 +39,6 @@ class UserProgramViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Program.objects.filter(creator=self.request.user)
-
-class PhaseViewSet(viewsets.ModelViewSet):
-    queryset = Phase.objects.all()
-    serializer_class = PhaseSerializer
 
 class WorkoutViewSet(viewsets.ModelViewSet):
     queryset = Workout.objects.all()
@@ -258,17 +254,6 @@ class ActiveProgramView(APIView):
         except UserProgramProgress.DoesNotExist:
             return Response({'error': 'No active program found.'}, status=status.HTTP_404_NOT_FOUND)
         
-class CurrentWorkoutView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, *args, **kwargs):
-        current_workout = get_current_workout(request.user)
-        if current_workout:
-            serializer = WorkoutSerializer(current_workout)
-            return Response(serializer.data)
-        else:
-            return Response({'message': 'No current workout found.'}, status=404)
-        
 class StartWorkoutSessionView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -334,43 +319,6 @@ class WorkoutSessionDetailView(RetrieveAPIView):
     queryset = WorkoutSession.objects.all()
     serializer_class = WorkoutSessionSerializer
     lookup_field = 'id'
-
-class PhasesDetailView(APIView):
-    #permission_classes = [IsAuthenticated]
-
-    def get(self, request, program_id):
-        program = get_object_or_404(Program, pk=program_id)
-        phases = program.phases.all()
-        serializer = PhaseDetailSerializer(phases, many=True)
-        return Response(serializer.data)
-    
-class UpdateWorkoutProgressView(APIView):
-    # Assuming you have permission_classes defined elsewhere
-
-    def post(self, request):
-        user = request.user
-        phase_id = request.data.get('phase_id')
-        week_number = request.data.get('week_number')
-        workout_id = request.data.get('workout_id')
-
-        with transaction.atomic():
-            user_prog_progress = UserProgramProgress.objects.get(user=user, is_active=True)
-            workout = Workout.objects.get(id=workout_id)  # Get the Workout instance
-            
-            phase_prog, _ = PhaseProgress.objects.get_or_create(
-                user_program_progress=user_prog_progress, 
-                phase_id=phase_id,
-                defaults={'current_week': week_number, 'current_workout_id': workout}
-            )
-            
-            user_prog_progress.current_phase_id = phase_id
-            user_prog_progress.save()
-            
-            phase_prog.current_week = week_number
-            phase_prog.current_workout_id = workout  # Update to directly reference the Workout instance
-            phase_prog.save()
-
-            return Response({'status': 'success', 'message': 'Workout progress updated'})
         
 class ExerciseLogViewSet(RetrieveUpdateAPIView):
     queryset = ExerciseLog.objects.all()
@@ -414,9 +362,9 @@ class ExerciseSetHistoryView(APIView):
 class OpenAIView(APIView):
     def post(self, request, *args, **kwargs):
         user_prompt = request.data.get('prompt')
-        phase_id = request.data.get('phase')
+        program_id = request.data.get('program_id')
 
-        if not user_prompt or not phase_id:
+        if not user_prompt or not program_id:
             return Response({"error": "Missing prompt or phase"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
@@ -444,7 +392,7 @@ class OpenAIView(APIView):
     ]
             )
             workout_data = json.loads(response.choices[0].message.content)
-            workout_data['phase'] = phase_id
+            workout_data['program'] = program_id
 
             serializer = WorkoutSerializer(data=workout_data, context={'request': request})
             if serializer.is_valid():

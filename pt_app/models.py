@@ -17,16 +17,8 @@ class Program(models.Model):
     def __str__(self):
         return self.name
 
-class Phase(models.Model):
-    program = models.ForeignKey(Program, related_name='phases', on_delete=models.CASCADE)
-    name = models.CharField(max_length=120, default='No Name')
-    weeks = models.IntegerField()
-
-    def __str__(self):
-        return f"{self.program} Phase {self.name}"
-
 class Workout(models.Model):
-    phase = models.ForeignKey(Phase, related_name='workouts', on_delete=models.CASCADE, null=True)
+    program = models.ForeignKey(Program, related_name='workouts', on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     creator = models.ForeignKey(User, related_name='created_workouts', on_delete=models.CASCADE)
     order = models.PositiveIntegerField(default=0)
@@ -55,29 +47,15 @@ class WorkoutExercise(models.Model):
 
     def __str__(self):
         return self.exercise.name
-    
 
 class UserProgramProgress(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='active_programs')
     program = models.ForeignKey(Program, on_delete=models.CASCADE, related_name='active_users')
-    current_phase = models.ForeignKey(Phase, on_delete=models.SET_NULL, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     start_date = models.DateField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.user.username}'s progress in {self.program.name}"
-
-class PhaseProgress(models.Model):
-    user_program_progress = models.ForeignKey(UserProgramProgress, on_delete=models.CASCADE, related_name='phase_progress')
-    phase = models.ForeignKey(Phase, on_delete=models.CASCADE, related_name='progresses')
-    current_week = models.IntegerField(default=1)
-    current_workout_id = models.ForeignKey(Workout, on_delete=models.SET_NULL, null=True, blank=True, related_name='current_progress')  # Changed field name and type
-
-    class Meta:
-        unique_together = ('user_program_progress', 'phase')
-
-    def __str__(self):
-        return f"{self.phase.program.name} - {self.phase.name}: Week {self.current_week}"
 
 class WorkoutSession(models.Model):
     user_program_progress = models.ForeignKey(UserProgramProgress, on_delete=models.CASCADE, related_name='workout_sessions')

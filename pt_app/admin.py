@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Program, Phase, Workout, Exercise, WorkoutExercise, User, UserProgramProgress, PhaseProgress, WorkoutSession, ExerciseLog, ExerciseSet, Message, ChatSession
+from .models import Program, Workout, Exercise, WorkoutExercise, User, UserProgramProgress, WorkoutSession, ExerciseLog, ExerciseSet, Message, ChatSession
 from django.utils.html import format_html
 
 @admin.register(User)
@@ -12,17 +12,10 @@ class ProgramAdmin(admin.ModelAdmin):
     search_fields = ('name', 'creator__username')
     list_filter = ('creator',)
 
-@admin.register(Phase)
-class PhaseAdmin(admin.ModelAdmin):
-    list_display = ('program', 'name', 'weeks', 'id')
-    search_fields = ('program__name',)
-    list_filter = ('program',)
-
 @admin.register(Workout)
 class WorkoutAdmin(admin.ModelAdmin):
-    list_display = ('phase', 'name', 'id')
-    search_fields = ('name', 'phase__program__name')
-    list_filter = ('phase__program',)
+    list_display = ('name', 'id')
+    search_fields = ('name',) 
 
 @admin.register(Exercise)
 class ExerciseAdmin(admin.ModelAdmin):
@@ -32,14 +25,14 @@ class ExerciseAdmin(admin.ModelAdmin):
 @admin.register(WorkoutExercise)
 class WorkoutExerciseAdmin(admin.ModelAdmin):
     list_display = ('workout', 'exercise', 'sets', 'reps', 'note', 'id')
-    search_fields = ('workout__name', 'exercise__name')
-    list_filter = ('workout__phase__program', 'exercise')
+    search_fields = ('workout__name', 'exercise__name')  # This is correct as a tuple
+    list_filter = ('exercise',) 
 
 @admin.register(UserProgramProgress)
 class UserProgramProgressAdmin(admin.ModelAdmin):
-    list_display = ('user', 'program', 'current_phase', 'is_active', 'start_date')
-    search_fields = ('user__username', 'program__name', 'current_phase__name')
-    list_filter = ('program', 'current_phase', 'is_active')
+    list_display = ('user', 'program', 'is_active', 'start_date')
+    search_fields = ('user__username', 'program__name')
+    list_filter = ('program','is_active')
     date_hierarchy = 'start_date'  # Enables a quick date drill down
 
 class ExerciseSetAdmin(admin.ModelAdmin):
@@ -70,8 +63,7 @@ class ExerciseLogAdmin(admin.ModelAdmin):
         # This method can be used to modify the queryset. For example, you can optimize queries by selecting related fields
         qs = super().get_queryset(request)
         return qs.select_related('workout_session', 'workout_exercise')
-
-admin.site.register(PhaseProgress)
+    
 admin.site.register(WorkoutSession)
 admin.site.register(ExerciseLog, ExerciseLogAdmin)
 admin.site.register(ExerciseSet, ExerciseSetAdmin)
