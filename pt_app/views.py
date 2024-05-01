@@ -404,6 +404,63 @@ class OpenAIView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
+
+class OpenAIProgramView(APIView):
+    def post(self, request, *args, **kwargs):
+        user_prompt = request.data.get('prompt')
+
+        if not user_prompt:
+            return Response({"error": "Missing prompt"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            openai.api_key = settings.API_KEY
+            response = openai.chat.completions.create(
+                model="gpt-4-turbo",
+                messages=[
+        {
+        "role": "system",
+        "content": "You are a Professional NSCA Certified Strength and Conditioning Specialist. Write a workout program based on the user's prompts following all NSCA guidelines. Your response should be a valid JSON object structured as follows: {"
+            "\"name\": \"<Name of the workout program>\","
+            "\"description\": \"<Description of the workout program>\","
+            "\"workouts\": ["
+                "{"
+                    "\"name\": \"<Name of the workout>\","
+                    "\"workout_exercises\": ["
+                        "{"
+                            "\"exercise_name\": \"<Name of the exercise>\","
+                            "\"sets\": <type:int>,"
+                            "\"reps\": <type:int>,"
+                            "\"note\": \"<Specific note for the exercise>\""
+                        "},"
+                        "{"
+                            "\"exercise_name\": \"<Name of another exercise>\","
+                            "\"sets\": <type:int>,"
+                            "\"reps\": <type:int>,"
+                            "\"note\": \"<Specific note for another exercise>\""
+                        "}"
+                        "    {...additional exercises}"
+                    "]"
+                "}"
+                "{...additional workouts}"
+            "]"
+        "}. Use double quotes for keys and string values. Replace placeholder text with actual program and exercise details."
+        },
+        {"role": "user", "content": user_prompt}
+    ]
+            )
+            program_data = json.loads(response.choices[0].message.content)
+
+
+            serializer = ProgramSerializer(data=program_data, context={'request': request})
+            if serializer.is_valid():
+                serializer.save(creator=request.user)  # Assuming your program model has a creator field
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
 #APIs for Messages
         
 class UserViewSet(viewsets.ModelViewSet):
