@@ -58,6 +58,7 @@ class WorkoutExerciseSerializer(serializers.ModelSerializer):
 class WorkoutSerializer(serializers.ModelSerializer):
     creator = UserSerializer(read_only=True)
     workout_exercises = WorkoutExerciseSerializer(many=True)
+    program = serializers.PrimaryKeyRelatedField(queryset=Program.objects.all(), write_only=True, required=False)
 
     class Meta:
         model = Workout
@@ -105,11 +106,20 @@ class ExerciseOrderSerializer(serializers.Serializer):
 
 class ProgramSerializer(serializers.ModelSerializer):
     creator = UserSerializer(read_only=True)
-    workouts = WorkoutSerializer(many=True, read_only=True)
+    workouts = WorkoutSerializer(many=True, required=False)
 
     class Meta:
         model = Program
         fields = '__all__'
+
+    def create(self, validated_data):
+        workouts_data = validated_data.pop('workouts', [])
+        program = Program.objects.create(**validated_data)
+        for workout_data in workouts_data:
+            workout_serializer = WorkoutSerializer(data=workout_data, context={'program': program})
+            if workout_serializer.is_valid(raise_exception=True):
+                workout_serializer.save(program=program, creator=program.creator)
+        return program
 
 #workout journal feature
         
