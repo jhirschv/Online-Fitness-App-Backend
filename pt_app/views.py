@@ -236,7 +236,7 @@ class CreateAndActivateProgramView(APIView):
             # Step 2: Set the program as active
             try:
                 user_program_progress = set_or_update_user_program_progress(request.user, program.id)
-                return Response({'message': 'Program created and set as active successfully.'}, status=status.HTTP_201_CREATED)
+                return Response({'message': 'Program created and set as active successfully.', 'program': ProgramSerializer(program).data}, status=status.HTTP_201_CREATED)
             except Program.DoesNotExist:  # This should theoretically never happen since we just created the program
                 return Response({'error': 'An unexpected error occurred.'}, status=status.HTTP_404_NOT_FOUND)
         else:
