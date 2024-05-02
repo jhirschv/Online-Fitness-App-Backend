@@ -371,6 +371,7 @@ class OpenAIView(APIView):
             openai.api_key = settings.API_KEY
             response = openai.chat.completions.create(
                 model="gpt-3.5-turbo",
+                response_format={"type":"json_object"},
                 messages=[
         {
             "role": "system",
@@ -416,10 +417,12 @@ class OpenAIProgramView(APIView):
             openai.api_key = settings.API_KEY
             response = openai.chat.completions.create(
                 model="gpt-4-turbo",
+                response_format={"type":"json_object"},
                 messages=[
         {
         "role": "system",
-        "content": "You are a Professional NSCA Certified Strength and Conditioning Specialist. Write a workout program based on the user's prompts following all NSCA guidelines. Your response should be a valid JSON object structured as follows: {"
+        "content": "You are a Professional NSCA Certified Strength and Conditioning Specialist. Write a workout program based on the user's prompts following all NSCA guidelines. Your response should be a valid JSON object structured as follows:" 
+        "{"
             "\"name\": \"<Name of the workout program>\","
             "\"description\": \"<Description of the workout program>\","
             "\"workouts\": ["
@@ -443,7 +446,7 @@ class OpenAIProgramView(APIView):
                 "}"
                 "{...additional workouts}"
             "]"
-        "}. Use double quotes for keys and string values. Replace placeholder text with actual program and exercise details."
+        "}.Replace placeholder text with actual program and exercise details."
         },
         {"role": "user", "content": user_prompt}
     ]
@@ -453,7 +456,8 @@ class OpenAIProgramView(APIView):
 
             serializer = ProgramSerializer(data=program_data, context={'request': request})
             if serializer.is_valid():
-                serializer.save(creator=request.user)  # Assuming your program model has a creator field
+                program = serializer.save(creator=request.user)  # Assuming your program model has a creator field
+                set_or_update_user_program_progress(request.user, program.id)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
