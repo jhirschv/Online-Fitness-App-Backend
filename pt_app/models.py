@@ -65,7 +65,7 @@ class WorkoutSession(models.Model):
     active = models.BooleanField(default=True)
     
     def __str__(self):
-        return f"{self.user_program_progress.user.username}'s session: {self.workout.name} on {self.date.strftime('%Y-%m-%d')}"
+        return f"ID: {self.id} - {self.user_program_progress.user.username}'s session: {self.workout.name} on {self.date.strftime('%Y-%m-%d')}"
 
 class ExerciseLog(models.Model):
     workout_session = models.ForeignKey(WorkoutSession, related_name='exercise_logs', on_delete=models.CASCADE)

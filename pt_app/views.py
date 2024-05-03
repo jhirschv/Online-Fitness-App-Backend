@@ -23,6 +23,7 @@ from django.db.models import Exists, OuterRef
 from rest_framework.decorators import api_view, permission_classes
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.http import Http404
 
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
@@ -40,6 +41,16 @@ class UserRegistrationView(APIView):
                 tokens = get_tokens_for_user(user)
                 return Response({"tokens": tokens, "message": "User created successfully"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class UserDeleteAPIView(APIView):
+    permission_classes = [IsAuthenticated]  # Ensure only authenticated users can access
+
+    def delete(self, request):
+        # Directly use request.user since it's always present for authenticated users
+        user = request.user
+        user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+        
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
