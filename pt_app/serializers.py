@@ -5,6 +5,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from django.db.models import Max
 from django.contrib.auth import get_user_model
 from django.core.validators import RegexValidator, MinLengthValidator, MaxLengthValidator
+from django.utils.text import capfirst
 
 User = get_user_model()
 
@@ -86,12 +87,27 @@ class WorkoutExerciseSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         exercise_name = validated_data.pop('exercise_name', None)
-        
-        # If an exercise name is provided, use it to get or create an Exercise instance
-        if exercise_name:
-            exercise, created = Exercise.objects.get_or_create(name=exercise_name)
-            validated_data['exercise'] = exercise
-        
+
+        # Capitalize the first letter of each word for consistency
+        exercise_name = capfirst(exercise_name)
+
+        # Check if an Exercise instance with creator=null exists for the given exercise_name
+        universal_exercise = Exercise.objects.filter(name=exercise_name, creator=None).first()
+
+        # Check if an Exercise instance with creator=request.user exists for the given exercise_name
+        user_specific_exercise = Exercise.objects.filter(name=exercise_name, creator=self.context['request'].user).first()
+
+        # Determine which Exercise instance to use or create
+        if universal_exercise:
+            exercise = universal_exercise
+        elif user_specific_exercise:
+            exercise = user_specific_exercise
+        else:
+            # Create a new Exercise instance with creator=request.user
+            exercise = Exercise.objects.create(name=exercise_name, creator=self.context['request'].user)
+
+        validated_data['exercise'] = exercise
+
         workout_exercise = WorkoutExercise.objects.create(**validated_data)
         return workout_exercise
 
@@ -127,7 +143,7 @@ class WorkoutSerializer(serializers.ModelSerializer):
 
         workout = Workout.objects.create(**validated_data)
         for workout_exercise_data in workout_exercises_data:
-            workout_exercise_serializer = WorkoutExerciseSerializer(data=workout_exercise_data, context={'workout': workout})
+            workout_exercise_serializer = WorkoutExerciseSerializer(data=workout_exercise_data, context={'request': self.context['request'], 'workout': workout})
             if workout_exercise_serializer.is_valid(raise_exception=True):
                 workout_exercise_serializer.save(workout=workout)
         return workout
@@ -143,7 +159,10 @@ class WorkoutSerializer(serializers.ModelSerializer):
         # Clear existing workout_exercises and recreate them
         instance.workout_exercises.all().delete()
         for workout_exercise_data in workout_exercises_data:
-            workout_exercise_serializer = WorkoutExerciseSerializer(data=workout_exercise_data, context={'workout': instance})
+            workout_exercise_serializer = WorkoutExerciseSerializer(
+                data=workout_exercise_data, 
+                context={'request': self.context.get('request'), 'workout': instance}  # Pass the request object if available
+            )
             if workout_exercise_serializer.is_valid(raise_exception=True):
                 workout_exercise_serializer.save(workout=instance)
 
@@ -166,10 +185,11 @@ class ProgramSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def create(self, validated_data):
+        request = self.context.get('request')
         workouts_data = validated_data.pop('workouts', [])
         program = Program.objects.create(**validated_data)
         for workout_data in workouts_data:
-            workout_serializer = WorkoutSerializer(data=workout_data, context={'program': program})
+            workout_serializer = WorkoutSerializer(data=workout_data, context={'program': program, 'request': request})
             if workout_serializer.is_valid(raise_exception=True):
                 workout_serializer.save(program=program, creator=program.creator)
         return program

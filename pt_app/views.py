@@ -118,6 +118,13 @@ class ExerciseViewSet(viewsets.ModelViewSet):
     queryset = Exercise.objects.all()
     serializer_class = ExerciseSerializer
 
+class UserExerciseViewSet(viewsets.ModelViewSet):
+    serializer_class = ExerciseSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        return Exercise.objects.filter(creator=user)
+
 class ExerciseSetCreateAPIView(APIView):
     def post(self, request, log_id):
         # Retrieve the associated ExerciseLog

@@ -30,6 +30,7 @@ class Exercise(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, default='No description')
     video = models.CharField(max_length=255, blank=True, null=True)
+    creator = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
 
     def __str__(self):
         return self.name

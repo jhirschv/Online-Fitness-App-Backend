@@ -8,7 +8,8 @@ ProgramCreateView, ActiveProgramView, SetActiveProgramView, StartWorkoutSessionV
  UserWorkoutSessionView, ExerciseSetViewSet, UserWorkoutViewSet, SetInactiveProgramView, CreateAndActivateProgramView,
  OpenAIView, UserViewSet, MessageViewSet, ChatSessionViewSet, WorkoutSessionsLast3MonthsView , Exercise1RMView, ExercisesWithWeightsView, CumulativeWeightView,
  check_active_session, EndWorkoutSession, VideoUploadAPI, DeleteVideoAPIView, ExerciseSetHistoryView, ExerciseLogViewSet, ExerciseSetCreateAPIView,
- DeleteLastExerciseSetAPIView, UpdateWorkoutOrderAPIView, UpdateExerciseOrderAPIView, OpenAIProgramView, UserRegistrationView, UserDeleteAPIView)
+ DeleteLastExerciseSetAPIView, UpdateWorkoutOrderAPIView, UpdateExerciseOrderAPIView, OpenAIProgramView, UserRegistrationView, UserDeleteAPIView,
+ UserExerciseViewSet)
 
 router = DefaultRouter()
 router.register(r'programs', ProgramViewSet)
@@ -16,6 +17,7 @@ router.register(r'user_programs', UserProgramViewSet, basename='user_program')
 router.register(r'workouts', WorkoutViewSet)
 router.register(r'user_workouts', UserWorkoutViewSet)
 router.register(r'exercises', ExerciseViewSet)
+router.register(r'user_exercises', UserExerciseViewSet, basename='user_exercises')
 router.register(r'workout_exercises', WorkoutExerciseViewSet)
 router.register(r'user_workout_sessions', UserWorkoutSessionView, basename='userworkoutsession')
 router.register(r'users', UserViewSet)
