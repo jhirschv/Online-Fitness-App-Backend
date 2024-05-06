@@ -50,7 +50,6 @@ class UserDeleteAPIView(APIView):
         user = request.user
         user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-        
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
@@ -115,8 +114,10 @@ class UserWorkoutViewSet(viewsets.ModelViewSet):
         return Workout.objects.filter(creator=self.request.user)
 
 class ExerciseViewSet(viewsets.ModelViewSet):
-    queryset = Exercise.objects.all()
     serializer_class = ExerciseSerializer
+
+    def get_queryset(self):
+        return Exercise.objects.filter(creator=None)
 
 class UserExerciseViewSet(viewsets.ModelViewSet):
     serializer_class = ExerciseSerializer
@@ -406,7 +407,7 @@ class OpenAIView(APIView):
         try:
             openai.api_key = settings.API_KEY
             response = openai.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4-turbo",
                 response_format={"type":"json_object"},
                 messages=[
         {
