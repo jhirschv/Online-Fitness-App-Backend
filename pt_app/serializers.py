@@ -230,6 +230,8 @@ class MessageSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class ChatSessionSerializer(serializers.ModelSerializer):
+    participants = UserSerializer(many=True, read_only=True)
+
     class Meta:
         model = ChatSession
-        fields = '__all__'
+        fields = ['id', 'created_at', 'participants']

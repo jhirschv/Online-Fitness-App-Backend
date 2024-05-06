@@ -9,7 +9,7 @@ ProgramCreateView, ActiveProgramView, SetActiveProgramView, StartWorkoutSessionV
  OpenAIView, UserViewSet, MessageViewSet, ChatSessionViewSet, WorkoutSessionsLast3MonthsView , Exercise1RMView, ExercisesWithWeightsView, CumulativeWeightView,
  check_active_session, EndWorkoutSession, VideoUploadAPI, DeleteVideoAPIView, ExerciseSetHistoryView, ExerciseLogViewSet, ExerciseSetCreateAPIView,
  DeleteLastExerciseSetAPIView, UpdateWorkoutOrderAPIView, UpdateExerciseOrderAPIView, OpenAIProgramView, UserRegistrationView, UserDeleteAPIView,
- UserExerciseViewSet, AIProgramLimitView, AIWorkoutLimitView)
+ UserExerciseViewSet, AIProgramLimitView, AIWorkoutLimitView, UserChatSessionsView)
 
 router = DefaultRouter()
 router.register(r'programs', ProgramViewSet)
@@ -49,6 +49,7 @@ urlpatterns = [
     path('ai_program_limit/', AIProgramLimitView.as_view(), name='ai_program_limit'),
     path('ai_workout_limit/', AIWorkoutLimitView.as_view(), name='ai_workout_limit'),
     path('chat/<int:other_user_id>/', views.ChatSessionViewSet.as_view({'get': 'list'}), name='chat-session', ),
+    path('user_chats/', UserChatSessionsView.as_view(), name='user_chats'),
     path('workout_sessions_last_3_months/', WorkoutSessionsLast3MonthsView.as_view(), name='workout_sessions_last_3_months'),
     path('exercise/<int:exercise_id>/1rm/', Exercise1RMView.as_view(), name='exercise-1rm'),
     path('exercises_with_weights/', ExercisesWithWeightsView.as_view(), name='exercises-with-weights'),

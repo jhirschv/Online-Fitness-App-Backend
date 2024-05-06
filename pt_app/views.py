@@ -600,6 +600,15 @@ class ChatSessionViewSet(viewsets.ViewSet):
             return Response(serializer.data)
         return Response({"message": "No chat session found"}, status=404)
     
+class UserChatSessionsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        chat_sessions = ChatSession.objects.filter(participants=user).distinct()
+        serializer = ChatSessionSerializer(chat_sessions, many=True)
+        return Response(serializer.data)
+    
 #dataCharts
     
 class WorkoutSessionsLast3MonthsView(APIView):
