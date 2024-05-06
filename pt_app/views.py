@@ -17,13 +17,14 @@ import openai
 import json
 from django.conf import settings
 from django.utils.timezone import now
-from datetime import timedelta
+from datetime import timedelta, datetime, time
 from collections import OrderedDict
 from django.db.models import Exists, OuterRef
 from rest_framework.decorators import api_view, permission_classes
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.http import Http404
+from django.utils import timezone
 
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
@@ -405,6 +406,26 @@ class OpenAIView(APIView):
             return Response({"error": "Missing prompt or phase"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
+            now = timezone.now()
+
+            # Calculate the start of the current week (most recent Sunday at midnight)
+            start_of_week = now - timedelta(days=(now.weekday() + 1) % 7)
+            start_of_week = timezone.make_aware(datetime.combine(start_of_week.date(), time.min))
+
+            # Calculate the end of the week (end of Saturday)
+            end_of_week = start_of_week + timedelta(days=6)
+            end_of_week = timezone.make_aware(datetime.combine(end_of_week.date(), time.max))
+
+            # Check the count of AI-generated workouts for the current week
+            ai_workout_count = Workout.objects.filter(
+                creator=request.user,
+                is_ai_generated=True,
+                created_at__range=(start_of_week, end_of_week)
+            ).count()
+
+            if ai_workout_count >= 3:
+                return Response({"error": "You have reached the limit of 3 AI-generated workouts per week."}, status=status.HTTP_400_BAD_REQUEST)
+            
             openai.api_key = settings.API_KEY
             response = openai.chat.completions.create(
                 model="gpt-4-turbo",
@@ -434,7 +455,7 @@ class OpenAIView(APIView):
 
             serializer = WorkoutSerializer(data=workout_data, context={'request': request})
             if serializer.is_valid():
-                serializer.save(creator=request.user)  # Assuming your Workout model has a creator field
+                serializer.save(creator=request.user, is_ai_generated=True)  # Assuming your Workout model has a creator field
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -451,6 +472,26 @@ class OpenAIProgramView(APIView):
             return Response({"error": "Missing prompt"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
+            now = timezone.now()
+
+            # Calculate the start of the current week (most recent Sunday at midnight)
+            start_of_week = now - timedelta(days=(now.weekday() + 1) % 7)
+            start_of_week = timezone.make_aware(datetime.combine(start_of_week.date(), time.min))
+
+            # Calculate the end of the current week (end of Saturday)
+            end_of_week = start_of_week + timedelta(days=6)
+            end_of_week = timezone.make_aware(datetime.combine(end_of_week.date(), time.max))
+
+            # Check the count of AI-generated programs for the current week
+            ai_program_count = Program.objects.filter(
+                creator=request.user,
+                is_ai_generated=True,
+                created_at__range=(start_of_week, end_of_week)
+            ).count()
+
+            if ai_program_count >= 3:
+                return Response({"error": "You have reached the limit of 3 AI programs per week."}, status=status.HTTP_400_BAD_REQUEST)
+            
             openai.api_key = settings.API_KEY
             response = openai.chat.completions.create(
                 model="gpt-4-turbo",
@@ -493,7 +534,7 @@ class OpenAIProgramView(APIView):
 
             serializer = ProgramSerializer(data=program_data, context={'request': request})
             if serializer.is_valid():
-                program = serializer.save(creator=request.user)  # Assuming your program model has a creator field
+                program = serializer.save(creator=request.user, is_ai_generated=True)  # Assuming your program model has a creator field
                 set_or_update_user_program_progress(request.user, program.id)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             else:
@@ -501,6 +542,40 @@ class OpenAIProgramView(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class AIProgramLimitView(APIView):
+    def get(self, request):
+        now = timezone.now()
+        start_of_week = now - timedelta(days=(now.weekday() + 1) % 7)
+        start_of_week = timezone.make_aware(datetime.combine(start_of_week.date(), datetime.min.time()))
+        end_of_week = start_of_week + timedelta(days=6)
+        end_of_week = timezone.make_aware(datetime.combine(end_of_week.date(), datetime.max.time()))
+
+        ai_program_count = Program.objects.filter(
+            creator=request.user,
+            is_ai_generated=True,
+            created_at__range=[start_of_week, end_of_week]
+        ).count()
+
+        remaining = 3 - ai_program_count  # Assuming the limit is 5 programs per week
+        return Response({"remaining": remaining}, status=status.HTTP_200_OK)
+    
+class AIWorkoutLimitView(APIView):
+    def get(self, request):
+        now = timezone.now()
+        start_of_week = now - timedelta(days=(now.weekday() + 1) % 7)
+        start_of_week = timezone.make_aware(datetime.combine(start_of_week.date(), datetime.min.time()))
+        end_of_week = start_of_week + timedelta(days=6)
+        end_of_week = timezone.make_aware(datetime.combine(end_of_week.date(), datetime.max.time()))
+
+        ai_workout_count = Workout.objects.filter(
+            creator=request.user,
+            is_ai_generated=True,
+            created_at__range=[start_of_week, end_of_week]
+        ).count()
+
+        remaining = 3 - ai_workout_count  # Assuming the limit is 5 workouts per week
+        return Response({"remaining": remaining}, status=status.HTTP_200_OK)
         
 #APIs for Messages
         

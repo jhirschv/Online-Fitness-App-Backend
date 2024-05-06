@@ -13,6 +13,8 @@ class Program(models.Model):
     description = models.TextField(blank=True)
     creator = models.ForeignKey(User, related_name='created_programs', on_delete=models.CASCADE)
     participants = models.ManyToManyField(User, related_name='participating_programs', blank=True)
+    is_ai_generated = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
@@ -22,6 +24,8 @@ class Workout(models.Model):
     name = models.CharField(max_length=255)
     creator = models.ForeignKey(User, related_name='created_workouts', on_delete=models.CASCADE)
     order = models.PositiveIntegerField(default=0)
+    is_ai_generated = models.BooleanField(default=False)  # Indicates if the workout is AI-generated
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name

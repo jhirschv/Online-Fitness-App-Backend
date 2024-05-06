@@ -14,7 +14,7 @@ class ProgramAdmin(admin.ModelAdmin):
 
 @admin.register(Workout)
 class WorkoutAdmin(admin.ModelAdmin):
-    list_display = ('name', 'id')
+    list_display = ('name', 'id', 'is_ai_generated')
     search_fields = ('name',) 
 
 @admin.register(Exercise)
