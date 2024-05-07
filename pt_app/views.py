@@ -606,7 +606,7 @@ class UserChatSessionsView(APIView):
     def get(self, request):
         user = request.user
         chat_sessions = ChatSession.objects.filter(participants=user).distinct()
-        serializer = ChatSessionSerializer(chat_sessions, many=True)
+        serializer = ChatSessionSerializer(chat_sessions, many=True, context={'request': request})
         return Response(serializer.data)
     
 #dataCharts
