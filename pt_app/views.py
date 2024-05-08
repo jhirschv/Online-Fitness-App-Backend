@@ -591,8 +591,15 @@ class ChatSessionViewSet(viewsets.ModelViewSet):
     queryset = ChatSession.objects.all()
     serializer_class = ChatSessionSerializer
 
-class ChatSessionViewSet(viewsets.ViewSet):
-    def list(self, request, other_user_id=None):
+    def destroy(self, request, *args, **pk):
+        chat_session = self.get_object()
+        messages = Message.objects.filter(chat_session=chat_session)
+        messages.delete()  # Delete all messages associated with the chat session
+        chat_session.delete()  # Delete the chat session
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+class ChatSessionMessageViewSet(viewsets.ViewSet):
+    def retrieve_or_create_session_get_messages(self, request, other_user_id=None):
         chat_session = get_chat_session(request.user.id, other_user_id)
         if chat_session:
             messages = get_messages_for_session(chat_session)
