@@ -23,10 +23,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
         sender_id = text_data_json['senderId']
-        content = text_data_json['content']
+        encrypted_message_recipient = text_data_json['encrypted_message_recipient']
+        encrypted_message_sender = text_data_json['encrypted_message_sender']
 
         # Use await when calling save_message
-        await self.save_message(sender_id, self.user_id_1, self.user_id_2, content)
+        await self.save_message(sender_id, self.user_id_1, self.user_id_2, encrypted_message_recipient, encrypted_message_sender)
+
 
         await self.channel_layer.group_send(
             self.room_group_name,
@@ -34,7 +36,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'type': 'chat_message',
                 'message': {
                     'sender': sender_id,
-                    'content': content,
+                    'encrypted_message_recipient': encrypted_message_recipient,
+                    'encrypted_message_sender': encrypted_message_sender
                 },
             }
         )
@@ -70,10 +73,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
             chat_session.participants.add(user1, user2)
             return chat_session, True
     
-    async def save_message(self, sender_id, user_id_1, user_id_2, content):
+    async def save_message(self, sender_id, user_id_1, user_id_2, encrypted_message_recipient, encrypted_message_sender):
         sender = await database_sync_to_async(User.objects.get)(id=sender_id)
         chat_session, created = await self.get_or_create_chat_session(user_id_1, user_id_2)
         message = await database_sync_to_async(Message.objects.create)(
-        sender=sender, content=content, chat_session=chat_session
+            sender=sender, chat_session=chat_session,
+            encrypted_message_recipient=encrypted_message_recipient,
+            encrypted_message_sender=encrypted_message_sender
         )
         return message

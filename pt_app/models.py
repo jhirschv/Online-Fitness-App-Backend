@@ -4,6 +4,7 @@ from django.utils.timezone import now
 from django.conf import settings
 
 class User(AbstractUser):
+    public_key = models.TextField(null=True, blank=True)
     
     def __str__(self):
         return self.username
@@ -107,7 +108,8 @@ class ChatSession(models.Model):
 class Message(models.Model):
     chat_session = models.ForeignKey(ChatSession, related_name='messages', on_delete=models.CASCADE)
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='sent_messages', on_delete=models.CASCADE)
-    content = models.TextField()
+    encrypted_message_recipient = models.TextField(null=True, blank=True)
+    encrypted_message_sender = models.TextField(null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

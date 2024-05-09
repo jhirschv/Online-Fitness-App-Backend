@@ -9,7 +9,7 @@ ProgramCreateView, ActiveProgramView, SetActiveProgramView, StartWorkoutSessionV
  OpenAIView, UserViewSet, MessageViewSet, ChatSessionViewSet, WorkoutSessionsLast3MonthsView , Exercise1RMView, ExercisesWithWeightsView, CumulativeWeightView,
  check_active_session, EndWorkoutSession, VideoUploadAPI, DeleteVideoAPIView, ExerciseSetHistoryView, ExerciseLogViewSet, ExerciseSetCreateAPIView,
  DeleteLastExerciseSetAPIView, UpdateWorkoutOrderAPIView, UpdateExerciseOrderAPIView, OpenAIProgramView, UserRegistrationView, UserDeleteAPIView,
- UserExerciseViewSet, AIProgramLimitView, AIWorkoutLimitView, UserChatSessionsView)
+ UserExerciseViewSet, AIProgramLimitView, AIWorkoutLimitView, UserChatSessionsView, UpdatePublicKeyView)
 
 router = DefaultRouter()
 router.register(r'programs', ProgramViewSet)
@@ -53,9 +53,10 @@ urlpatterns = [
     path('workout_sessions_last_3_months/', WorkoutSessionsLast3MonthsView.as_view(), name='workout_sessions_last_3_months'),
     path('exercise/<int:exercise_id>/1rm/', Exercise1RMView.as_view(), name='exercise-1rm'),
     path('exercises_with_weights/', ExercisesWithWeightsView.as_view(), name='exercises-with-weights'),
-    path('api/token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('cumulative-weight/', CumulativeWeightView.as_view(), name='cumulative-weight'),
+    path('api/token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('update-public-key/', UpdatePublicKeyView.as_view(), name='update-public-key'),
     path('api-auth/', include('rest_framework.urls')),
     path('api/register/', UserRegistrationView.as_view(), name='register'),
     path('delete-account/', UserDeleteAPIView.as_view(), name='delete-account'),

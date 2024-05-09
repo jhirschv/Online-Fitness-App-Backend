@@ -66,10 +66,17 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['username'] = user.username
         return token
     
+class PublicKeySerializer(serializers.Serializer):
+    public_key = serializers.CharField()
+
+    def validate_public_key(self, value):
+        # Add validation logic for public key if necessary
+        return value
+    
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'id']
+        fields = ['username', 'id', 'public_key']
 
 class ExerciseSerializer(serializers.ModelSerializer):
     class Meta:
@@ -228,7 +235,8 @@ class WorkoutSessionSerializer(serializers.ModelSerializer):
 class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
-        fields = '__all__'
+        fields = ['id', 'chat_session', 'sender', 'encrypted_message_recipient', 'encrypted_message_sender', 'timestamp']
+
 
 class ChatSessionSerializer(serializers.ModelSerializer):
     participants = UserSerializer(many=True, read_only=True)
@@ -243,7 +251,7 @@ class ChatSessionSerializer(serializers.ModelSerializer):
         if last_message:
             time_since = timesince(last_message.timestamp).split(',')[0]  # Simplify to the most significant unit
             if last_message.sender == self.context['request'].user:
-                return {"message": f"You: {last_message.content}", "timestamp": time_since}
+                return {"message": f"You: {time_since}", "timestamp": time_since}
             else:
-                return {"message": last_message.content, "timestamp": time_since}
+                return {"message": {time_since}, "timestamp": time_since}
         return None

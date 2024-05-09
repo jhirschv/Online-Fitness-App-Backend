@@ -10,9 +10,10 @@ from .models import (Program, Workout, Exercise, WorkoutExercise, UserProgramPro
                     User, Message, ChatSession)
 from .serializers import (MyTokenObtainPairSerializer, ProgramSerializer, WorkoutSerializer, ExerciseSerializer, WorkoutExerciseSerializer, 
                         WorkoutSessionSerializer, ExerciseSetSerializer, UserSerializer, MessageSerializer, ChatSessionSerializer,
-                        ExerciseSetVideoSerializer, ExerciseLogSerializer, WorkoutOrderSerializer, ExerciseOrderSerializer, UserRegistrationSerializer)
+                        ExerciseSetVideoSerializer, ExerciseLogSerializer, WorkoutOrderSerializer, ExerciseOrderSerializer, UserRegistrationSerializer,
+                        PublicKeySerializer)
 from .utils import set_or_update_user_program_progress, start_workout_session, get_chat_session, get_messages_for_session
-from rest_framework import status
+from rest_framework import permissions, status
 import openai
 import json
 from django.conf import settings
@@ -51,6 +52,18 @@ class UserDeleteAPIView(APIView):
         user = request.user
         user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class UpdatePublicKeyView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = PublicKeySerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            user = request.user
+            user.public_key = serializer.validated_data['public_key']
+            user.save()
+            return Response({"message": "Public key updated successfully"}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
