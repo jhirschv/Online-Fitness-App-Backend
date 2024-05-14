@@ -10,7 +10,7 @@ class User(AbstractUser):
         return self.username
 
 class Program(models.Model):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=30)
     description = models.TextField(blank=True)
     creator = models.ForeignKey(User, related_name='created_programs', on_delete=models.CASCADE)
     participants = models.ManyToManyField(User, related_name='participating_programs', blank=True)

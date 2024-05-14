@@ -26,6 +26,10 @@ from django.core.exceptions import ObjectDoesNotExist
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.http import Http404
 from django.utils import timezone
+import logging
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
@@ -74,6 +78,57 @@ class ProgramViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(creator=self.request.user)
+
+class AddParticipantView(APIView):
+    def post(self, request, program_id):
+        user_id = request.data.get('user_id')
+        try:
+            program = Program.objects.get(pk=program_id)
+            user = User.objects.get(pk=user_id)
+            program.participants.add(user)
+            program.save()
+            return Response({'status': 'participant added'}, status=status.HTTP_200_OK)
+        except Program.DoesNotExist:
+            return Response({'error': 'Program does not exist'}, status=status.HTTP_400_BAD_REQUEST)
+        except User.DoesNotExist:
+            return Response({'error': 'User does not exist'}, status=status.HTTP_400_BAD_REQUEST)
+        
+class RemoveParticipantView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, program_id):
+        user = request.user
+        try:
+            program = Program.objects.get(pk=program_id)
+            if user not in program.participants.all():
+                return Response({'error': 'User is not a participant of this program'}, status=status.HTTP_400_BAD_REQUEST)
+
+            program.participants.remove(user)
+            program.save()
+            return Response({'status': 'participant removed'}, status=status.HTTP_200_OK)
+        except Program.DoesNotExist:
+            return Response({'error': 'Program does not exist'}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class UserParticipatingProgramsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            user = request.user
+            logger.info(f"Fetching programs for user: {user.username}")
+            programs = Program.objects.filter(participants=user)
+            if not programs.exists():
+                logger.info(f"No programs found for user: {user.username}")
+                return Response({"detail": "No programs found"}, status=status.HTTP_404_NOT_FOUND)
+            
+            serializer = ProgramSerializer(programs, many=True)
+            logger.info(f"Programs found for user: {user.username} - {programs}")
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error(f"Error fetching programs for user: {user.username} - {str(e)}")
+            return Response({"detail": "An error occurred while fetching programs"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class UserProgramViewSet(viewsets.ModelViewSet):
     serializer_class = ProgramSerializer
@@ -514,7 +569,7 @@ class OpenAIProgramView(APIView):
         "role": "system",
         "content": "You are a Professional NSCA Certified Strength and Conditioning Specialist. Write a workout program based on the user's prompts following all NSCA guidelines. Your response should be a valid JSON object structured as follows:" 
         "{"
-            "\"name\": \"<Name of the workout program>\","
+            "\"name\": \"<Name of the workout program(max_length=30)>\","
             "\"description\": \"<Description of the workout program>\","
             "\"workouts\": ["
                 "{"
