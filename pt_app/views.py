@@ -11,8 +11,9 @@ from .models import (Program, Workout, Exercise, WorkoutExercise, UserProgramPro
 from .serializers import (MyTokenObtainPairSerializer, ProgramSerializer, WorkoutSerializer, ExerciseSerializer, WorkoutExerciseSerializer, 
                         WorkoutSessionSerializer, ExerciseSetSerializer, UserSerializer, MessageSerializer, ChatSessionSerializer,
                         ExerciseSetVideoSerializer, ExerciseLogSerializer, WorkoutOrderSerializer, ExerciseOrderSerializer, UserRegistrationSerializer,
-                        PublicKeySerializer)
+                        PublicKeySerializer, TrainerRequestSerializer)
 from .utils import set_or_update_user_program_progress, start_workout_session, get_chat_session, get_messages_for_session
+from .models import User, TrainerRequest, TrainerClientRelationship
 from rest_framework import permissions, status
 import openai
 import json
@@ -26,10 +27,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.http import Http404
 from django.utils import timezone
-import logging
-
-# Set up logging
-logger = logging.getLogger(__name__)
 
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
@@ -71,6 +68,57 @@ class UpdatePublicKeyView(APIView):
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
+
+class SendTrainerRequestView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, user_id):
+        from_user = request.user
+        to_user = User.objects.get(pk=user_id)
+        if from_user == to_user:
+            return Response({'error': 'You cannot send a trainer request to yourself'}, status=status.HTTP_400_BAD_REQUEST)
+
+        trainer_request, created = TrainerRequest.objects.get_or_create(from_user=from_user, to_user=to_user, is_active=True)
+        if created:
+            return Response({'status': 'Trainer request sent'}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'error': 'Trainer request already exists'}, status=status.HTTP_400_BAD_REQUEST)
+        
+class UserTrainerRequestsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        received_requests = TrainerRequest.objects.filter(to_user=user, is_active=True)
+        sent_requests = TrainerRequest.objects.filter(from_user=user, is_active=True)
+        data = {
+            'received_requests': TrainerRequestSerializer(received_requests, many=True).data,
+            'sent_requests': TrainerRequestSerializer(sent_requests, many=True).data,
+        }
+        return Response(data, status=status.HTTP_200_OK)
+
+class HandleTrainerRequestView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, request_id):
+        trainer_request = TrainerRequest.objects.get(pk=request_id)
+        if request.user != trainer_request.to_user:
+            return Response({'error': 'You do not have permission to handle this request'}, status=status.HTTP_403_FORBIDDEN)
+
+        action = request.data.get('action')
+
+        if action == 'accept':
+            TrainerClientRelationship.objects.create(trainer=trainer_request.from_user, client=trainer_request.to_user)
+            trainer_request.is_active = False
+            trainer_request.save()
+            return Response({'status': 'Trainer request accepted'}, status=status.HTTP_200_OK)
+        elif action == 'reject':
+            trainer_request.is_active = False
+            trainer_request.save()
+            return Response({'status': 'Trainer request rejected'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Invalid action'}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class ProgramViewSet(viewsets.ModelViewSet):
     queryset = Program.objects.all()
@@ -115,20 +163,11 @@ class UserParticipatingProgramsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        try:
-            user = request.user
-            logger.info(f"Fetching programs for user: {user.username}")
-            programs = Program.objects.filter(participants=user)
-            if not programs.exists():
-                logger.info(f"No programs found for user: {user.username}")
-                return Response({"detail": "No programs found"}, status=status.HTTP_404_NOT_FOUND)
-            
-            serializer = ProgramSerializer(programs, many=True)
-            logger.info(f"Programs found for user: {user.username} - {programs}")
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except Exception as e:
-            logger.error(f"Error fetching programs for user: {user.username} - {str(e)}")
-            return Response({"detail": "An error occurred while fetching programs"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        user = request.user
+        programs = Program.objects.filter(participants=user)
+        
+        serializer = ProgramSerializer(programs, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class UserProgramViewSet(viewsets.ModelViewSet):
     serializer_class = ProgramSerializer

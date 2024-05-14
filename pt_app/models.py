@@ -5,9 +5,27 @@ from django.conf import settings
 
 class User(AbstractUser):
     public_key = models.TextField(null=True, blank=True)
+    clients = models.ManyToManyField('self', through='TrainerClientRelationship', symmetrical=False, related_name='trainers')
     
     def __str__(self):
         return self.username
+    
+class TrainerRequest(models.Model):
+    from_user = models.ForeignKey(User, related_name='sent_trainer_requests', on_delete=models.CASCADE)
+    to_user = models.ForeignKey(User, related_name='received_trainer_requests', on_delete=models.CASCADE)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Trainer request from {self.from_user} to {self.to_user}"
+
+class TrainerClientRelationship(models.Model):
+    trainer = models.ForeignKey(User, related_name='trainer_relationships', on_delete=models.CASCADE)
+    client = models.ForeignKey(User, related_name='client_relationships', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.trainer} trains {self.client}"
 
 class Program(models.Model):
     name = models.CharField(max_length=30)

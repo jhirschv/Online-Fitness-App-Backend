@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Program, Workout, Exercise, WorkoutExercise, User, WorkoutSession, ExerciseLog, ExerciseSet, Message, ChatSession
+from .models import Program, Workout, Exercise, WorkoutExercise, User, WorkoutSession, ExerciseLog, ExerciseSet, Message, ChatSession, TrainerRequest,TrainerClientRelationship 
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.db.models import Max
@@ -73,10 +73,20 @@ class PublicKeySerializer(serializers.Serializer):
         # Add validation logic for public key if necessary
         return value
     
+class TrainerRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TrainerRequest
+        fields = '__all__'
+
+class TrainerClientRelationshipSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TrainerClientRelationship
+        fields = '__all__'
+    
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'id', 'public_key']
+        fields = ['username', 'id', 'public_key', 'trainers', 'clients']
 
 class ExerciseSerializer(serializers.ModelSerializer):
     class Meta:

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Program, Workout, Exercise, WorkoutExercise, User, UserProgramProgress, WorkoutSession, ExerciseLog, ExerciseSet, Message, ChatSession
+from .models import Program, Workout, Exercise, WorkoutExercise, User, UserProgramProgress, WorkoutSession, ExerciseLog, ExerciseSet, Message, ChatSession, TrainerRequest, TrainerClientRelationship 
 from django.utils.html import format_html
 
 @admin.register(User)
@@ -64,6 +64,18 @@ class ExerciseLogAdmin(admin.ModelAdmin):
         # This method can be used to modify the queryset. For example, you can optimize queries by selecting related fields
         qs = super().get_queryset(request)
         return qs.select_related('workout_session', 'workout_exercise')
+    
+@admin.register(TrainerRequest)
+class TrainerRequestAdmin(admin.ModelAdmin):
+    list_display = ('from_user', 'to_user', 'is_active', 'created_at')
+    list_filter = ('is_active', 'created_at')
+    search_fields = ('from_user__username', 'to_user__username')
+
+@admin.register(TrainerClientRelationship)
+class TrainerClientRelationshipAdmin(admin.ModelAdmin):
+    list_display = ('trainer', 'client', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('trainer__username', 'client__username')
     
 admin.site.register(WorkoutSession)
 admin.site.register(ExerciseLog, ExerciseLogAdmin)
