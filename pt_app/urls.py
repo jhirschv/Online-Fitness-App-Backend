@@ -10,7 +10,8 @@ ProgramCreateView, ActiveProgramView, SetActiveProgramView, StartWorkoutSessionV
  check_active_session, EndWorkoutSession, VideoUploadAPI, DeleteVideoAPIView, ExerciseSetHistoryView, ExerciseLogViewSet, ExerciseSetCreateAPIView,
  DeleteLastExerciseSetAPIView, UpdateWorkoutOrderAPIView, UpdateExerciseOrderAPIView, OpenAIProgramView, UserRegistrationView, UserDeleteAPIView,
  UserExerciseViewSet, AIProgramLimitView, AIWorkoutLimitView, UserChatSessionsView, UpdatePublicKeyView, AddParticipantView, UserParticipatingProgramsView,
- RemoveParticipantView, SendTrainerRequestView, HandleTrainerRequestView, UserTrainerRequestsView)
+ RemoveParticipantView, SendTrainerRequestView, HandleTrainerRequestView, UserTrainerRequestsView, ClientWorkoutSessionsLast3MonthsView, 
+ ClientExercise1RMView, ClientExercisesWithWeightsView, ClientCumulativeWeightView)
 
 router = DefaultRouter()
 router.register(r'programs', ProgramViewSet)
@@ -67,6 +68,11 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls')),
     path('api/register/', UserRegistrationView.as_view(), name='register'),
     path('delete-account/', UserDeleteAPIView.as_view(), name='delete-account'),
+    path('client-workout-sessions-last-3-months/<int:client_id>/', ClientWorkoutSessionsLast3MonthsView.as_view(), name='client-workout-sessions-last-3-months'),
+    path('client-exercise-1rm/<int:client_id>/<int:exercise_id>/', ClientExercise1RMView.as_view(), name='client-exercise-1rm'),
+    path('client-exercises-with-weights/<int:client_id>/', ClientExercisesWithWeightsView.as_view(), name='client-exercises-with-weights'),
+    path('client-cumulative-weight/<int:client_id>/', ClientCumulativeWeightView.as_view(), name='client-cumulative-weight'),
+    
 ]
 
  

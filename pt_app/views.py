@@ -838,3 +838,147 @@ class CumulativeWeightView(APIView):
         response_data = [{'date': date, 'total_weight_lifted': weight} for date, weight in cumulative_weights.items()]
 
         return Response(response_data)
+    
+#client progress
+
+class ClientWorkoutSessionsLast3MonthsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, client_id):
+        client = get_object_or_404(User, pk=client_id)
+
+        # Ensure the client is one of the user's clients
+        if not request.user.clients.filter(pk=client_id).exists():
+            return Response({"detail": "Client not found or not authorized."}, status=403)
+
+        end_date = now()
+        start_date = end_date - timedelta(days=90)  # Approximately 3 months
+
+        sessions = WorkoutSession.objects.filter(
+            user_program_progress__user=client,
+            date__range=(start_date, end_date)
+        ).order_by('date')
+
+        chart_data = self.process_sessions_by_week(sessions, start_date, end_date)
+        return Response(chart_data)
+
+    def process_sessions_by_week(self, sessions, start_date, end_date):
+        data = OrderedDict()
+        current_date = start_date
+        while current_date <= end_date:
+            week_str = current_date.strftime('%Y-%U')  # Maintain unique year-week identification
+            data[week_str] = 0
+            current_date += timedelta(days=7)
+        
+        end_week_str = end_date.strftime('%Y-%U')
+        if end_week_str not in data:
+            data[end_week_str] = 0
+
+        for session in sessions:
+            week_str = session.date.strftime('%Y-%U')
+            if week_str in data:
+                data[week_str] += 1
+
+        # Convert to a format suitable for Recharts, consider transforming week_str for frontend display if needed
+        chart_data = [{'week': week, 'workouts': count} for week, count in data.items()]
+        return chart_data
+
+class ClientExercise1RMView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, client_id, exercise_id):
+        client = get_object_or_404(User, pk=client_id)
+
+        # Ensure the client is one of the user's clients
+        if not request.user.clients.filter(pk=client_id).exists():
+            return Response({"detail": "Client not found or not authorized."}, status=403)
+
+        # Calculate the date 6 months ago from today
+        six_months_ago = now() - timedelta(days=180)
+        
+        # Fetch exercise sets for the given exercise in the last 6 months
+        exercise_sets = ExerciseSet.objects.filter(
+            exercise_log__workout_exercise__exercise_id=exercise_id,
+            exercise_log__workout_session__user_program_progress__user=client,
+            exercise_log__workout_session__date__gte=six_months_ago
+        ).select_related('exercise_log__workout_exercise__exercise').exclude(weight_used__isnull=True).exclude(reps__isnull=True).order_by('exercise_log__workout_session__date')
+        
+        # Prepare the data for the chart
+        chart_data = self.prepare_chart_data(exercise_sets)
+        
+        return Response(chart_data)
+
+    def prepare_chart_data(self, exercise_sets):
+        chart_data = {}
+        for exercise_set in exercise_sets:
+            # Calculate 1RM using the Epley formula for each set
+            one_rm = exercise_set.weight_used * (1 + exercise_set.reps / 30.0)
+            day = exercise_set.exercise_log.workout_session.date.strftime('%Y-%m-%d')
+            
+            # If multiple sets are done on the same day, store the max 1RM
+            if day not in chart_data or one_rm > chart_data[day]:
+                chart_data[day] = one_rm
+        
+        # Convert the chart data dictionary to a list of objects
+        return [{'day': day, 'one_rm': one_rm} for day, one_rm in chart_data.items()]
+
+class ClientExercisesWithWeightsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, client_id):
+        client = get_object_or_404(User, pk=client_id)
+
+        # Ensure the client is one of the user's clients
+        if not request.user.clients.filter(pk=client_id).exists():
+            return Response({"detail": "Client not found or not authorized."}, status=403)
+
+        # Adjusted subquery to check for ExerciseSets linked to the client's WorkoutExercises
+        has_weighted_sets = ExerciseSet.objects.filter(
+            exercise_log__workout_session__user_program_progress__user=client,
+            exercise_log__workout_exercise__exercise_id=OuterRef('pk'),  # Note the change here
+            weight_used__isnull=False
+        )
+
+        # Query for Exercises with at least one ExerciseSet with weight_used for the client
+        exercises = Exercise.objects.annotate(
+            has_weighted_set=Exists(has_weighted_sets)
+        ).filter(has_weighted_set=True).distinct()
+        
+        # Prepare and return the response with Exercise details
+        exercises_data = [{'id': exercise.id, 'name': exercise.name} for exercise in exercises]
+        return Response(exercises_data)
+
+class ClientCumulativeWeightView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, client_id):
+        client = get_object_or_404(User, pk=client_id)
+
+        # Ensure the client is one of the user's clients
+        if not request.user.clients.filter(pk=client_id).exists():
+            return Response({"detail": "Client not found or not authorized."}, status=403)
+
+        end_date = now().date()
+        start_date = end_date - timedelta(days=6)  # Last 7 days including today
+
+        # Fetch all sessions for the client in the last 7 days
+        sessions = WorkoutSession.objects.filter(
+            user_program_progress__user=client,
+            date__date__range=(start_date, end_date)
+        ).prefetch_related('exercise_logs__exercise_sets')
+
+        # Prepare data structure for cumulative weights
+        cumulative_weights = {date.strftime('%Y-%m-%d'): 0 for date in [start_date + timedelta(days=x) for x in range((end_date-start_date).days + 1)]}
+
+        # Calculate cumulative weight for each day
+        for session in sessions:
+            session_date = session.date.date().strftime('%Y-%m-%d')
+            for log in session.exercise_logs.all():
+                for exercise_set in log.exercise_sets.all():
+                    if exercise_set.weight_used and exercise_set.reps:
+                        cumulative_weights[session_date] += (exercise_set.weight_used * exercise_set.reps)
+        
+        # Format the data for the response
+        response_data = [{'date': date, 'total_weight_lifted': weight} for date, weight in cumulative_weights.items()]
+
+        return Response(response_data)
