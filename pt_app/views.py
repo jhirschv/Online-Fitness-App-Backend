@@ -840,6 +840,20 @@ class CumulativeWeightView(APIView):
         return Response(response_data)
     
 #client progress
+    
+class ClientWorkoutSessionView(viewsets.ModelViewSet):
+    serializer_class = WorkoutSessionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        client_id = self.kwargs.get('client_id')
+        client = get_object_or_404(User, pk=client_id)
+
+        # Ensure the client is one of the user's clients
+        if not self.request.user.clients.filter(pk=client_id).exists():
+            return WorkoutSession.objects.none()  # Return an empty queryset if unauthorized
+
+        return WorkoutSession.objects.filter(user_program_progress__user=client)
 
 class ClientWorkoutSessionsLast3MonthsView(APIView):
     permission_classes = [IsAuthenticated]

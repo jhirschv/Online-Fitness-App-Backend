@@ -260,8 +260,7 @@ class ChatSessionSerializer(serializers.ModelSerializer):
         last_message = obj.messages.order_by('-timestamp').first()  # Get the most recent message
         if last_message:
             time_since = timesince(last_message.timestamp).split(',')[0]  # Simplify to the most significant unit
-            if last_message.sender == self.context['request'].user:
-                return {"message": f"You: {time_since}", "timestamp": time_since}
-            else:
-                return {"message": {time_since}, "timestamp": time_since}
+            message_data = MessageSerializer(last_message).data
+            message_data['timestamp'] = time_since
+            return message_data
         return None
