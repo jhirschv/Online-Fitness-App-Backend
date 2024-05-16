@@ -1,10 +1,22 @@
 from django.contrib import admin
 from .models import Program, Workout, Exercise, WorkoutExercise, User, UserProgramProgress, WorkoutSession, ExerciseLog, ExerciseSet, Message, ChatSession, TrainerRequest, TrainerClientRelationship 
 from django.utils.html import format_html
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.utils.html import mark_safe
 
 @admin.register(User)
-class UserAdmin(admin.ModelAdmin):
-    list_display = ('username', 'id')
+class UserAdmin(BaseUserAdmin):
+    fieldsets = BaseUserAdmin.fieldsets + (
+        (None, {'fields': ('profile_picture',)}),
+    )
+    list_display = ('username', 'id', 'profile_picture_display')
+
+    def profile_picture_display(self, obj):
+        """Create a method to display an image thumbnail in admin list view."""
+        if obj.profile_picture:
+            return mark_safe(f'<img src="{obj.profile_picture.url}" width="50" height="50" />')
+        return "No Image"
+    profile_picture_display.short_description = 'Profile Picture'
 
 @admin.register(Program)
 class ProgramAdmin(admin.ModelAdmin):

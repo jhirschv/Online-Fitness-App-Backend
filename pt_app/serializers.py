@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from django.core.validators import RegexValidator, MinLengthValidator, MaxLengthValidator
 from django.utils.text import capfirst
 from django.utils.timesince import timesince
+from django.core.files.images import get_image_dimensions
 
 User = get_user_model()
 
@@ -28,7 +29,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         style={'input_type': 'password'},
         validators=[
             RegexValidator(
-                regex='^[a-zA-Z0-9!@#$%^&*()_+=\[\]{};:\'"\\|,.<>\/?~-]+$',
+                regex=r'^[a-zA-Z0-9!@#$%^&*()_+=\[\]{};:\'"\\|,.<>\/?~-]+$',
                 message="Password must consist of alphanumeric and special characters only."
             ),
             MinLengthValidator(8, message="Password must be at least 8 characters long."),
@@ -86,7 +87,34 @@ class TrainerClientRelationshipSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'id', 'public_key', 'trainers', 'clients']
+        fields = ['username', 'id', 'public_key', 'trainers', 'clients','profile_picture']
+        extra_kwargs = {
+            'profile_picture': {'required': False}
+        }
+
+    def validate_profile_picture(self, value):
+        """
+        Validates the uploaded image.
+        - Checks that it is a JPEG, PNG, or MPO file by MIME type.
+        - Ensures the file size does not exceed 2MB.
+        """
+        # Validate file type by MIME type
+        valid_mime_types = ['image/jpeg', 'image/png', 'image/mpo']
+        mime_type = value.content_type  # Directly access content_type
+        print(f"File MIME type: {mime_type}")  # Log the MIME type
+        if mime_type not in valid_mime_types:
+            raise serializers.ValidationError("File must be a JPEG or PNG image.")
+
+        # Validate file size
+        if value.size > 10 * 1024 * 1024:  # 2MB limit
+            raise serializers.ValidationError("Image file too large ( > 2MB ).")
+
+        # Optionally, validate image dimensions
+        width, height = get_image_dimensions(value)
+        if width > 8000 or height > 8000:
+            raise serializers.ValidationError("Image dimensions should not be greater than 4000x4000 pixels.")
+
+        return value
 
 class ExerciseSerializer(serializers.ModelSerializer):
     class Meta:

@@ -2,11 +2,27 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils.timezone import now
 from django.conf import settings
+from PIL import Image
 
 class User(AbstractUser):
     public_key = models.TextField(null=True, blank=True)
     clients = models.ManyToManyField('self', through='TrainerClientRelationship', symmetrical=False, related_name='trainers')
-    
+    profile_picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.profile_picture:
+            img_path = self.profile_picture.path
+            img = Image.open(img_path)
+            if img.height != img.width:
+                size = min(img.size)  # Ensuring the image is square
+                left = (img.width - size) / 2
+                top = (img.height - size) / 2
+                right = (img.width + size) / 2
+                bottom = (img.height + size) / 2
+                img = img.crop((left, top, right, bottom))
+                img.save(img_path)
+
     def __str__(self):
         return self.username
     
@@ -40,7 +56,7 @@ class Program(models.Model):
 
 class Workout(models.Model):
     program = models.ForeignKey(Program, related_name='workouts', on_delete=models.CASCADE)
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=30)
     creator = models.ForeignKey(User, related_name='created_workouts', on_delete=models.CASCADE)
     order = models.PositiveIntegerField(default=0)
     is_ai_generated = models.BooleanField(default=False)  # Indicates if the workout is AI-generated
@@ -50,9 +66,9 @@ class Workout(models.Model):
         return self.name
 
 class Exercise(models.Model):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=25)
     description = models.TextField(blank=True, default='No description')
-    video = models.CharField(max_length=255, blank=True, null=True)
+    video = models.CharField(max_length=25, blank=True, null=True)
     creator = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
 
     def __str__(self):

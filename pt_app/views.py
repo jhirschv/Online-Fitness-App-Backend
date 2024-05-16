@@ -313,6 +313,19 @@ class DeleteVideoAPIView(APIView):
             return Response({'message': 'Video deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
         except ExerciseSet.DoesNotExist:
             return Response({'error': 'ExerciseSet not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+class ProfilePictureUploadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        print("Received request data:", request.data)  # Log the request data
+        user = request.user
+        serializer = UserSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        print("Serializer errors:", serializer.errors)  # Log serializer errors
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class WorkoutExerciseViewSet(viewsets.ModelViewSet):
     queryset = WorkoutExercise.objects.all()
@@ -760,14 +773,17 @@ class WorkoutSessionsLast3MonthsView(APIView):
         return chart_data
     
 class Exercise1RMView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request, exercise_id):
         # Calculate the date 6 months ago from today
         six_months_ago = now() - timedelta(days=180)
         
-        # Fetch exercise sets for the given exercise in the last 6 months
+        # Fetch exercise sets for the given exercise in the last 6 months for the current user
         exercise_sets = ExerciseSet.objects.filter(
             exercise_log__workout_exercise__exercise_id=exercise_id,
-            exercise_log__workout_session__date__gte=six_months_ago
+            exercise_log__workout_session__date__gte=six_months_ago,
+            exercise_log__workout_session__user_program_progress__user=request.user
         ).select_related('exercise_log__workout_exercise__exercise').exclude(weight_used__isnull=True).exclude(reps__isnull=True).order_by('exercise_log__workout_session__date')
         
         # Prepare the data for the chart
