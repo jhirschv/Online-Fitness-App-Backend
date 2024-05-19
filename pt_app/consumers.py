@@ -23,12 +23,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
         sender_id = text_data_json['senderId']
-        encrypted_message_recipient = text_data_json['encrypted_message_recipient']
-        encrypted_message_sender = text_data_json['encrypted_message_sender']
+        content = text_data_json['content']
 
         # Use await when calling save_message
-        await self.save_message(sender_id, self.user_id_1, self.user_id_2, encrypted_message_recipient, encrypted_message_sender)
-
+        await self.save_message(sender_id, self.user_id_1, self.user_id_2, content)
 
         await self.channel_layer.group_send(
             self.room_group_name,
@@ -36,19 +34,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'type': 'chat_message',
                 'message': {
                     'sender': sender_id,
-                    'encrypted_message_recipient': encrypted_message_recipient,
-                    'encrypted_message_sender': encrypted_message_sender
+                    'content': content,
                 },
             }
         )
-
+  
     async def chat_message(self, event):
         message = event['message']
-
         await self.send(text_data=json.dumps({
             'message': message
         }))
-
     def construct_room_name(self, user_id_1, user_id_2):
         return f"chat_{min(user_id_1, user_id_2)}_{max(user_id_1, user_id_2)}"
     
@@ -57,7 +52,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # Your logic to ensure two values are returned
         user1 = User.objects.get(id=user_id_1)
         user2 = User.objects.get(id=user_id_2)
-
         chat_sessions = ChatSession.objects.filter(
             participants__id__in=[user1.id, user2.id]
         ).annotate(
@@ -65,20 +59,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
         ).filter(
             participants_count=2
         )
-
         if chat_sessions.exists():
             return chat_sessions.first(), False
         else:
             chat_session = ChatSession.objects.create()
             chat_session.participants.add(user1, user2)
             return chat_session, True
-    
-    async def save_message(self, sender_id, user_id_1, user_id_2, encrypted_message_recipient, encrypted_message_sender):
+
+    async def save_message(self, sender_id, user_id_1, user_id_2, content):
         sender = await database_sync_to_async(User.objects.get)(id=sender_id)
         chat_session, created = await self.get_or_create_chat_session(user_id_1, user_id_2)
         message = await database_sync_to_async(Message.objects.create)(
-            sender=sender, chat_session=chat_session,
-            encrypted_message_recipient=encrypted_message_recipient,
-            encrypted_message_sender=encrypted_message_sender
+        sender=sender, content=content, chat_session=chat_session
         )
         return message

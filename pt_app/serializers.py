@@ -273,22 +273,20 @@ class WorkoutSessionSerializer(serializers.ModelSerializer):
 class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
-        fields = ['id', 'chat_session', 'sender', 'encrypted_message_recipient', 'encrypted_message_sender', 'timestamp']
-
+        fields = '__all__'
 
 class ChatSessionSerializer(serializers.ModelSerializer):
     participants = UserSerializer(many=True, read_only=True)
     last_message = serializers.SerializerMethodField()
-
     class Meta:
         model = ChatSession
         fields = ['id', 'created_at', 'participants', 'last_message']
-
     def get_last_message(self, obj):
         last_message = obj.messages.order_by('-timestamp').first()  # Get the most recent message
         if last_message:
             time_since = timesince(last_message.timestamp).split(',')[0]  # Simplify to the most significant unit
-            message_data = MessageSerializer(last_message).data
-            message_data['timestamp'] = time_since
-            return message_data
+            if last_message.sender == self.context['request'].user:
+                return {"message": f"You: {last_message.content}", "timestamp": time_since}
+            else:
+                return {"message": last_message.content, "timestamp": time_since}
         return None
