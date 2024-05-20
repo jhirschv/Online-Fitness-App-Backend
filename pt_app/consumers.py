@@ -33,8 +33,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # Dispatch to the appropriate handler based on the type of the message
         if event_type == 'message':
             await self.handle_chat_message(text_data_json)
-        elif event_type in ['trainer-request-sent', 'trainer-request-accepted', 'trainer-request-rejected']:
+        elif event_type == 'trainer-request-sent':
             await self.handle_trainer_request(text_data_json)
+        elif event_type == 'trainer-request-accepted':
+            await self.handle_accepted_response(text_data_json)
+        elif event_type == 'trainer-rejected-accepted':
+            await self.handle_rejected_response(text_data_json)
 
     async def handle_chat_message(self, data):
         # Prepare and send message to both the sender's and recipient's personal channel
@@ -66,6 +70,30 @@ class ChatConsumer(AsyncWebsocketConsumer):
         }
         await self.channel_layer.group_send(f"user_{data['to_user']}", request_data)
 
+    async def handle_accepted_response(self, data):
+        # Process trainer request responses (accepted or rejected)
+        response_data = {
+            'type': 'forward_request_accepted',  # This will be either 'trainer-request-accepted' or 'trainer-request-rejected'
+            'data': {
+                'id': data['id'],
+                'from_user': data['from_user'],
+                'to_user': data['to_user']
+            }
+        }
+        await self.channel_layer.group_send(f"user_{data['to_user']}", response_data)
+
+    async def handle_rejected_response(self, data):
+        # Process trainer request responses (accepted or rejected)
+        response_data = {
+            'type': 'forward_request_rejected',  # This will be either 'trainer-request-accepted' or 'trainer-request-rejected'
+            'data': {
+                'id': data['id'],
+                'from_user': data['from_user'],
+                'to_user': data['to_user']
+            }
+        }
+        await self.channel_layer.group_send(f"user_{data['to_user']}", response_data)
+
     async def chat_message(self, event):
         # Send chat message data to the WebSocket client
         await self.send(text_data=json.dumps({
@@ -78,6 +106,20 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({
             'type': 'trainer-request-sent',
             'data': event['request']
+        }))
+
+    async def forward_request_accepted(self, event):
+        # Handler for when a trainer request is accepted
+        await self.send(text_data=json.dumps({
+            'type': 'trainer_request_accepted',
+            'data': event['data']
+        }))
+
+    async def forward_request_rejected(self, event):
+        # Handler for when a trainer request is rejected
+        await self.send(text_data=json.dumps({
+            'type': 'trainer_request_rejected',
+            'data': event['data']
         }))
 
     @database_sync_to_async
