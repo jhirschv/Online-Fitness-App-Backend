@@ -28,32 +28,58 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
-        sender_id = text_data_json['senderId']
-        recipient_id = text_data_json['recipientId']
-        content = text_data_json['content']
+        event_type = text_data_json.get('type')
 
-        # Save the message
-        await self.save_message(sender_id, recipient_id, content)
+        # Dispatch to the appropriate handler based on the type of the message
+        if event_type == 'message':
+            await self.handle_chat_message(text_data_json)
+        elif event_type in ['trainer-request-sent', 'trainer-request-accepted', 'trainer-request-rejected']:
+            await self.handle_trainer_request(text_data_json)
 
-        # Prepare message data
+    async def handle_chat_message(self, data):
+        # Prepare and send message to both the sender's and recipient's personal channel
         message_data = {
             'type': 'chat_message',
             'message': {
-                'sender': sender_id,
-                'content': content,
+                'sender': data['senderId'],
+                'recipient': data['recipientId'],
+                'content': data['content'],
             },
         }
+        # Save the message
+        await self.save_message(data['senderId'],  data['recipientId'], data['content'])
 
-        # Send message to both the sender's and recipient's personal channel
-        await self.channel_layer.group_send(f"user_{sender_id}", message_data)
-        await self.channel_layer.group_send(f"user_{recipient_id}", message_data)
+        await self.channel_layer.group_send(f"user_{data['senderId']}", message_data)
+        await self.channel_layer.group_send(f"user_{data['recipientId']}", message_data)
+
+    async def handle_trainer_request(self, data):
+        # Directly relay the trainer request data to the recipient's channel
+        request_data = {
+            'type': 'forward_trainer_request',
+            'request': {
+                'id': data['id'],
+                'from_user': data['from_user'],
+                'to_user': data['to_user'],
+                'created_at': data['created_at'],
+                'is_active': data['is_active']
+            },
+        }
+        await self.channel_layer.group_send(f"user_{data['to_user']}", request_data)
 
     async def chat_message(self, event):
-        message = event['message']
+        # Send chat message data to the WebSocket client
         await self.send(text_data=json.dumps({
-            'message': message
+            'type': 'message',
+            'message': event['message']
         }))
     
+    async def forward_trainer_request(self, event):
+        # Forward the trainer request data to the WebSocket client
+        await self.send(text_data=json.dumps({
+            'type': 'trainer-request-sent',
+            'data': event['request']
+        }))
+
     @database_sync_to_async
     def get_or_create_chat_session(self, user_id_1, user_id_2):
         # Ensure the user IDs are in a consistent order

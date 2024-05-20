@@ -80,7 +80,14 @@ class SendTrainerRequestView(APIView):
 
         trainer_request, created = TrainerRequest.objects.get_or_create(from_user=from_user, to_user=to_user, is_active=True)
         if created:
-            return Response({'status': 'Trainer request sent'}, status=status.HTTP_201_CREATED)
+            return Response({
+                'id': trainer_request.id,
+                'status': 'Trainer request sent',
+                'from_user': from_user.id,
+                'to_user': to_user.id,
+                'created_at': trainer_request.created_at.isoformat(),  # Assumes your model has a 'created_at' field
+                'is_active': trainer_request.is_active
+            }, status=status.HTTP_201_CREATED)
         else:
             return Response({'error': 'Trainer request already exists'}, status=status.HTTP_400_BAD_REQUEST)
         
