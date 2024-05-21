@@ -11,7 +11,7 @@ ProgramCreateView, ActiveProgramView, SetActiveProgramView, StartWorkoutSessionV
  DeleteLastExerciseSetAPIView, UpdateWorkoutOrderAPIView, UpdateExerciseOrderAPIView, OpenAIProgramView, UserRegistrationView, UserDeleteAPIView,
  UserExerciseViewSet, AIProgramLimitView, AIWorkoutLimitView, UserChatSessionsView, UpdatePublicKeyView, AddParticipantView, UserParticipatingProgramsView,
  RemoveParticipantView, SendTrainerRequestView, HandleTrainerRequestView, UserTrainerRequestsView, ClientWorkoutSessionView, ClientWorkoutSessionsLast3MonthsView, 
- ClientExercise1RMView, ClientExercisesWithWeightsView, ClientCumulativeWeightView, ProfilePictureUploadView)
+ ClientExercise1RMView, ClientExercisesWithWeightsView, ClientCumulativeWeightView, ProfilePictureUploadView, RemoveClientView, RemoveTrainerView)
 
 router = DefaultRouter()
 router.register(r'programs', ProgramViewSet)
@@ -35,6 +35,8 @@ urlpatterns = [
     path('send-trainer-request/<int:user_id>/', SendTrainerRequestView.as_view(), name='send-trainer-request'),
     path('trainer-requests/', UserTrainerRequestsView.as_view(), name='user-trainer-requests'),
     path('handle-trainer-request/<int:request_id>/', HandleTrainerRequestView.as_view(), name='handle-trainer-request'),
+    path('remove-client/<int:client_id>/', RemoveClientView.as_view(), name='remove-client'),
+    path('remove-trainer/<int:trainer_id>/', RemoveTrainerView.as_view(), name='remove-trainer'),
     path('update_workout_order/', UpdateWorkoutOrderAPIView.as_view(), name='update_workout_exercise_order'),
     path('update_exercise_order/', UpdateExerciseOrderAPIView.as_view(), name='update_exercise_order'),
     path('get_active_program/', ActiveProgramView.as_view(), name='get_active_program'),

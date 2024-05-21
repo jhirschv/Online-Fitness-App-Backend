@@ -39,6 +39,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.handle_accepted_response(text_data_json)
         elif event_type == 'trainer-rejected-accepted':
             await self.handle_rejected_response(text_data_json)
+        elif event_type == 'remove-client':
+            await self.handle_remove_client(text_data_json)
+        elif event_type == 'remove-trainer':
+            await self.handle_remove_trainer(text_data_json)
 
     async def handle_chat_message(self, data):
         # Prepare and send message to both the sender's and recipient's personal channel
@@ -94,6 +98,26 @@ class ChatConsumer(AsyncWebsocketConsumer):
         }
         await self.channel_layer.group_send(f"user_{data['to_user']}", response_data)
 
+    async def handle_remove_client(self, data):
+        response_data = {
+            'type': 'forward_remove_client',
+            'data': {
+                'from_user': data['from_user'],
+                'to_user': data['to_user']
+            }
+        }
+        await self.channel_layer.group_send(f"user_{data['to_user']}", response_data)
+
+    async def handle_remove_trainer(self, data):
+        response_data = {
+            'type': 'forward_remove_trainer', 
+            'data': {
+                'from_user': data['from_user'],
+                'to_user': data['to_user']
+            }
+        }
+        await self.channel_layer.group_send(f"user_{data['to_user']}", response_data)
+
     async def chat_message(self, event):
         # Send chat message data to the WebSocket client
         await self.send(text_data=json.dumps({
@@ -119,6 +143,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # Handler for when a trainer request is rejected
         await self.send(text_data=json.dumps({
             'type': 'trainer_request_rejected',
+            'data': event['data']
+        }))
+
+    async def forward_remove_client(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'remove_client',
+            'data': event['data']
+        }))
+
+    async def forward_remove_trainer(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'remove_trainer',
             'data': event['data']
         }))
 

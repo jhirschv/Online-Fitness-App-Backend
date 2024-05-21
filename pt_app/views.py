@@ -125,6 +125,24 @@ class HandleTrainerRequestView(APIView):
             return Response({'status': 'Trainer request rejected'}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Invalid action'}, status=status.HTTP_400_BAD_REQUEST)
+        
+class RemoveClientView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, client_id):
+        # request.user is the trainer, and client_id is from the URL
+        relationship = get_object_or_404(TrainerClientRelationship, trainer_id=request.user.id, client_id=client_id)
+        relationship.delete()
+        return Response({"message": "Client removed successfully."}, status=status.HTTP_204_NO_CONTENT)
+
+class RemoveTrainerView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, trainer_id):
+        # request.user is the client, and trainer_id is from the URL
+        relationship = get_object_or_404(TrainerClientRelationship, trainer_id=trainer_id, client_id=request.user.id)
+        relationship.delete()
+        return Response({"message": "Trainer removed successfully."}, status=status.HTTP_204_NO_CONTENT)
 
 
 class ProgramViewSet(viewsets.ModelViewSet):
