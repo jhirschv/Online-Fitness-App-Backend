@@ -14,7 +14,7 @@ from .serializers import (MyTokenObtainPairSerializer, ProgramSerializer, Workou
                         PublicKeySerializer, TrainerRequestSerializer)
 from .utils import set_or_update_user_program_progress, start_workout_session, get_chat_session, get_messages_for_session
 from .models import User, TrainerRequest, TrainerClientRelationship
-from rest_framework import permissions, status
+from rest_framework import permissions, status, views
 import openai
 import json
 from django.conf import settings
@@ -355,6 +355,46 @@ class ProfilePictureUploadView(APIView):
 class WorkoutExerciseViewSet(viewsets.ModelViewSet):
     queryset = WorkoutExercise.objects.all()
     serializer_class = WorkoutExerciseSerializer
+
+class ExerciseLogCreationAPI(views.APIView):
+    def post(self, request, *args, **kwargs):
+        with transaction.atomic():
+            # First, check if the workout session exists
+            workout_session_id = request.data.get('workout_session')
+            try:
+                workout_session = WorkoutSession.objects.get(id=workout_session_id)
+            except WorkoutSession.DoesNotExist:
+                return Response({"error": "Workout session not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            # Create WorkoutExercise
+            workout_exercise_data = {
+                'exercise_name': request.data.get('exercise_name'),
+                'sets': 0,
+                'reps': 0
+            }
+            workout_exercise_serializer = WorkoutExerciseSerializer(data=workout_exercise_data, context={'request': request})
+            if workout_exercise_serializer.is_valid():
+                workout_exercise = workout_exercise_serializer.save()
+            else:
+                return Response(workout_exercise_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+            exercise_log = ExerciseLog.objects.create(
+                    workout_session=workout_session,
+                    workout_exercise=workout_exercise,
+                    sets_completed=0
+                )
+
+            exercise_log_serializer = ExerciseLogSerializer(exercise_log)
+            if exercise_log_serializer.is_valid:
+                return Response({
+                    "success": "Exercise log created successfully.",
+                    "exercise_log": exercise_log_serializer.data
+                }, status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    "failed": "Exercise log create failed.",
+                    "exercise_log": exercise_log_serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
 
 class ProgramCreateView(APIView):
     def post(self, request, *args, **kwargs):

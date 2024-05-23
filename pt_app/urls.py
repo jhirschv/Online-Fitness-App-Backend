@@ -11,7 +11,7 @@ ProgramCreateView, ActiveProgramView, SetActiveProgramView, StartWorkoutSessionV
  DeleteLastExerciseSetAPIView, UpdateWorkoutOrderAPIView, UpdateExerciseOrderAPIView, OpenAIProgramView, UserRegistrationView, UserDeleteAPIView,
  UserExerciseViewSet, AIProgramLimitView, AIWorkoutLimitView, UserChatSessionsView, UpdatePublicKeyView, AddParticipantView, UserParticipatingProgramsView,
  RemoveParticipantView, SendTrainerRequestView, HandleTrainerRequestView, UserTrainerRequestsView, ClientWorkoutSessionView, ClientWorkoutSessionsLast3MonthsView, 
- ClientExercise1RMView, ClientExercisesWithWeightsView, ClientCumulativeWeightView, ProfilePictureUploadView, RemoveClientView, RemoveTrainerView)
+ ClientExercise1RMView, ClientExercisesWithWeightsView, ClientCumulativeWeightView, ProfilePictureUploadView, RemoveClientView, RemoveTrainerView, ExerciseLogCreationAPI)
 
 router = DefaultRouter()
 router.register(r'programs', ProgramViewSet)
@@ -44,6 +44,7 @@ urlpatterns = [
     path('set_inactive_program/', SetInactiveProgramView.as_view(), name='set_inactive_program'),
     path('create-and-activate/', CreateAndActivateProgramView.as_view(), name='create_and_activate_program'),
     path('start_workout_session/', StartWorkoutSessionView.as_view(), name='start-workout-session'),
+    path('create-exercise-log/', ExerciseLogCreationAPI.as_view(), name='create_exercise_log'),
     path('check_active_session/', check_active_session, name='check-active-session'),
     path('end-session/<int:session_id>/', EndWorkoutSession.as_view(), name='end_workout_session'),
     path('workoutSession/<int:id>/', WorkoutSessionDetailView.as_view(), name='workout-session-detail'),

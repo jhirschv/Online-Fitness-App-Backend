@@ -75,7 +75,7 @@ class Exercise(models.Model):
         return self.name
 
 class WorkoutExercise(models.Model):
-    workout = models.ForeignKey(Workout, related_name='workout_exercises', on_delete=models.CASCADE)
+    workout = models.ForeignKey(Workout, related_name='workout_exercises', on_delete=models.SET_NULL, null=True, blank=True)
     exercise = models.ForeignKey(Exercise, related_name='workout_exercises', on_delete=models.CASCADE)
     sets = models.IntegerField()
     reps = models.IntegerField()
