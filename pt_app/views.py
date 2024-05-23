@@ -861,6 +861,7 @@ class Exercise1RMView(APIView):
         for exercise_set in exercise_sets:
             # Calculate 1RM using the Epley formula for each set
             one_rm = exercise_set.weight_used * (1 + exercise_set.reps / 30.0)
+            one_rm = round(one_rm, 1)
             day = exercise_set.exercise_log.workout_session.date.strftime('%Y-%m-%d')
             
             # If multiple sets are done on the same day, store the max 1RM
@@ -1008,6 +1009,7 @@ class ClientExercise1RMView(APIView):
         for exercise_set in exercise_sets:
             # Calculate 1RM using the Epley formula for each set
             one_rm = exercise_set.weight_used * (1 + exercise_set.reps / 30.0)
+            one_rm = round(one_rm, 1)
             day = exercise_set.exercise_log.workout_session.date.strftime('%Y-%m-%d')
             
             # If multiple sets are done on the same day, store the max 1RM
