@@ -281,12 +281,13 @@ class ChatSessionSerializer(serializers.ModelSerializer):
     class Meta:
         model = ChatSession
         fields = ['id', 'created_at', 'participants', 'last_message']
+
     def get_last_message(self, obj):
         last_message = obj.messages.order_by('-timestamp').first()  # Get the most recent message
         if last_message:
             time_since = timesince(last_message.timestamp).split(',')[0]  # Simplify to the most significant unit
             if last_message.sender == self.context['request'].user:
-                return {"message": f"You: {last_message.content}", "timestamp": time_since}
+                return {"message": f"You: {last_message.content}", "timestamp": time_since, "exact_time": last_message.timestamp.isoformat(), "read": last_message.read, "id": last_message.id, "sender": "user"}
             else:
-                return {"message": last_message.content, "timestamp": time_since}
+                return {"message": last_message.content, "timestamp": time_since, "exact_time": last_message.timestamp.isoformat(), "read": last_message.read, "id": last_message.id, "sender": "other_user"}
         return None
