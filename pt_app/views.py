@@ -11,7 +11,7 @@ from .models import (Program, Workout, Exercise, WorkoutExercise, UserProgramPro
 from .serializers import (MyTokenObtainPairSerializer, ProgramSerializer, WorkoutSerializer, ExerciseSerializer, WorkoutExerciseSerializer, 
                         WorkoutSessionSerializer, ExerciseSetSerializer, UserSerializer, MessageSerializer, ChatSessionSerializer,
                         ExerciseSetVideoSerializer, ExerciseLogSerializer, WorkoutOrderSerializer, ExerciseOrderSerializer, UserRegistrationSerializer,
-                        PublicKeySerializer, TrainerRequestSerializer)
+                        PublicKeySerializer, TrainerRequestSerializer, GuestRegistrationSerializer)
 from .utils import set_or_update_user_program_progress, start_workout_session, get_chat_session, get_messages_for_session
 from .models import User, TrainerRequest, TrainerClientRelationship
 from rest_framework import permissions, status, views
@@ -44,6 +44,31 @@ class UserRegistrationView(APIView):
                 tokens = get_tokens_for_user(user)
                 return Response({"tokens": tokens, "message": "User created successfully"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class GuestUserCreateAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        # Instantiate your serializer with empty data as your logic generates it
+        serializer = GuestRegistrationSerializer(data={})
+        if serializer.is_valid():
+            user, plain_password = serializer.save()  # Unpack the returned tuple
+
+            # Create token manually using the custom serializer with the plain password
+            token_serializer = MyTokenObtainPairSerializer(data={
+                'username': user.username,
+                'password': plain_password  # Use the plain password here
+            })
+
+            # Validate and generate tokens
+            if token_serializer.is_valid():
+                tokens = token_serializer.validated_data
+                return Response({
+                    'tokens': tokens,
+                    'message': 'Guest user created successfully'
+                }, status=status.HTTP_201_CREATED)
+            else:
+                return Response(token_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class UserDeleteAPIView(APIView):
     permission_classes = [IsAuthenticated]  # Ensure only authenticated users can access

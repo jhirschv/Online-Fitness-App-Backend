@@ -5,9 +5,9 @@ from django.conf import settings
 from PIL import Image
 
 class User(AbstractUser):
-    public_key = models.TextField(null=True, blank=True)
     clients = models.ManyToManyField('self', through='TrainerClientRelationship', symmetrical=False, related_name='trainers')
     profile_picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
+    guest = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)

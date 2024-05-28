@@ -8,6 +8,7 @@ from django.core.validators import RegexValidator, MinLengthValidator, MaxLength
 from django.utils.text import capfirst
 from django.utils.timesince import timesince
 from django.core.files.images import get_image_dimensions
+import uuid
 
 User = get_user_model()
 
@@ -59,6 +60,68 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             password=validated_data['password']
         )
         return user
+    
+class GuestRegistrationSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(
+        required=False,  # No longer required in the incoming request
+        default='',
+        validators=[
+            RegexValidator(
+                regex='^[a-zA-Z0-9_]+$',
+                message='Username must be alphanumeric and can include underscores',
+                code='invalid_username'
+            ),
+            MinLengthValidator(4, message="Username must be at least 4 characters long."),
+            MaxLengthValidator(20, message="Username must be no longer than 20 characters.")
+        ]
+    )
+    password = serializers.CharField(
+        required=False,  # No longer required in the incoming request
+        default='',
+        write_only=True,
+        validators=[
+            RegexValidator(
+                regex=r'^[a-zA-Z0-9!@#$%^&*()_+=\[\]{};:\'"\\|,.<>\/?~-]+$',
+                message="Password must consist of alphanumeric and special characters only."
+            ),
+            MinLengthValidator(8, message="Password must be at least 8 characters long."),
+            MaxLengthValidator(20, message="Password must be no longer than 20 characters.")
+        ]
+    )
+    email = serializers.EmailField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = ('username', 'password', 'email', 'guest')
+
+    def validate(self, data):
+        # Generate values
+        data['username'] = f"guest_{uuid.uuid4().hex[:8]}"
+        data['email'] = f"{data['username']}@example.com"
+        data['password'] = uuid.uuid4().hex[:20]
+
+        # Apply validators manually since these fields are read-only and would skip normal validation
+        for validator in self.fields['username'].validators:
+            validator(data['username'])
+        for validator in self.fields['password'].validators:
+            validator(data['password'])
+
+        return data
+
+    def create(self, validated_data):
+        # Extract the plaintext password from validated data before creating the user
+        plaintext_password = validated_data['password']
+
+        # Create the user object
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            password=plaintext_password,  # Django hashes the password here
+            guest=True
+        )
+
+        # Return both the user object and the plaintext password
+        return user, plaintext_password
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -87,7 +150,7 @@ class TrainerClientRelationshipSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'id', 'public_key', 'trainers', 'clients','profile_picture']
+        fields = ['username', 'id', 'trainers', 'clients','profile_picture']
         extra_kwargs = {
             'profile_picture': {'required': False}
         }

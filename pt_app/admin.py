@@ -9,7 +9,7 @@ class UserAdmin(BaseUserAdmin):
     fieldsets = BaseUserAdmin.fieldsets + (
         (None, {'fields': ('profile_picture',)}),
     )
-    list_display = ('username', 'id', 'profile_picture_display')
+    list_display = ('username', 'id', 'profile_picture_display', 'guest')
 
     def profile_picture_display(self, obj):
         """Create a method to display an image thumbnail in admin list view."""
