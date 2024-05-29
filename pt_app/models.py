@@ -44,7 +44,7 @@ class TrainerClientRelationship(models.Model):
         return f"{self.trainer} trains {self.client}"
 
 class Program(models.Model):
-    name = models.CharField(max_length=30)
+    name = models.CharField(max_length=50)
     description = models.TextField(blank=True)
     creator = models.ForeignKey(User, related_name='created_programs', on_delete=models.CASCADE)
     participants = models.ManyToManyField(User, related_name='participating_programs', blank=True)
@@ -56,7 +56,7 @@ class Program(models.Model):
 
 class Workout(models.Model):
     program = models.ForeignKey(Program, related_name='workouts', on_delete=models.CASCADE)
-    name = models.CharField(max_length=30)
+    name = models.CharField(max_length=50)
     creator = models.ForeignKey(User, related_name='created_workouts', on_delete=models.CASCADE)
     order = models.PositiveIntegerField(default=0)
     is_ai_generated = models.BooleanField(default=False)  # Indicates if the workout is AI-generated
@@ -66,9 +66,9 @@ class Workout(models.Model):
         return self.name
 
 class Exercise(models.Model):
-    name = models.CharField(max_length=25)
+    name = models.CharField(max_length=50)
     description = models.TextField(blank=True, default='No description')
-    video = models.CharField(max_length=25, blank=True, null=True)
+    video = models.CharField(max_length=50, blank=True, null=True)
     creator = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
 
     def __str__(self):

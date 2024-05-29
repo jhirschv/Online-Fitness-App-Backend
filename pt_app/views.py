@@ -638,7 +638,7 @@ class OpenAIView(APIView):
             
             openai.api_key = settings.API_KEY
             response = openai.chat.completions.create(
-                model="gpt-4-turbo",
+                model="gpt-4o",
                 response_format={"type":"json_object"},
                 messages=[
         {
@@ -647,14 +647,14 @@ class OpenAIView(APIView):
                        "{"
                        "\"workout_exercises\": ["
                        "    {"
-                       "        \"exercise_name\": \"<Name of the exercise(max_length=25)>\","
+                       "        \"exercise_name\": \"<Name of the exercise(max_length=45)>\","
                        "        \"sets\": <int>,"
                        "        \"reps\": <int>,"
                        "        \"note\": \"<Any specific note for the exercise>\""
                        "    },"
                        "    {...additional exercises}"
                        "],"
-                       "\"name\": \"<Name of the workout program>\""
+                       "\"name\": \"<Name of the workout program(max_length=45)>\""
                        "}. Use double quotes for keys and string values. Replace placeholder text with actual exercise details."
         },
         {"role": "user", "content": user_prompt}
@@ -704,21 +704,21 @@ class OpenAIProgramView(APIView):
             
             openai.api_key = settings.API_KEY
             response = openai.chat.completions.create(
-                model="gpt-4-turbo",
+                model="gpt-4o",
                 response_format={"type":"json_object"},
                 messages=[
         {
         "role": "system",
         "content": "You are a Professional NSCA Certified Strength and Conditioning Specialist. Write a workout program based on the user's prompts following all NSCA guidelines. Your response should be a valid JSON object structured as follows:" 
         "{"
-            "\"name\": \"<Name of the workout program(max_length=30)>\","
+            "\"name\": \"<Name of the workout program(max_length=45)>\","
             "\"description\": \"<Description of the workout program>\","
             "\"workouts\": ["
                 "{"
-                    "\"name\": \"<Name of the workout>\","
+                    "\"name\": \"<Name of the workout(max_length=45)>\","
                     "\"workout_exercises\": ["
                         "{"
-                            "\"exercise_name\": \"<Name of the exercise(max_length=25)>\","
+                            "\"exercise_name\": \"<Name of the exercise(max_length=45)>\","
                             "\"sets\": <type:int>,"
                             "\"reps\": <type:int>,"
                             "\"note\": \"<Specific note for the exercise>\""
