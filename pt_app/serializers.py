@@ -258,22 +258,23 @@ class WorkoutSerializer(serializers.ModelSerializer):
         return workout
 
     def update(self, instance, validated_data):
-        workout_exercises_data = validated_data.pop('workout_exercises', [])
-        
+        workout_exercises_data = validated_data.pop('workout_exercises', None)
+    
         # Update the Workout instance itself
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
 
-        # Clear existing workout_exercises and recreate them
-        instance.workout_exercises.all().delete()
-        for workout_exercise_data in workout_exercises_data:
-            workout_exercise_serializer = WorkoutExerciseSerializer(
-                data=workout_exercise_data, 
-                context={'request': self.context.get('request'), 'workout': instance}  # Pass the request object if available
-            )
-            if workout_exercise_serializer.is_valid(raise_exception=True):
-                workout_exercise_serializer.save(workout=instance)
+        if workout_exercises_data is not None:
+            # Clear existing workout_exercises and recreate them only if workout_exercises_data is provided
+            instance.workout_exercises.all().delete()
+            for workout_exercise_data in workout_exercises_data:
+                workout_exercise_serializer = WorkoutExerciseSerializer(
+                    data=workout_exercise_data, 
+                    context={'request': self.context.get('request'), 'workout': instance}  # Pass the request object if available
+                )
+                if workout_exercise_serializer.is_valid(raise_exception=True):
+                    workout_exercise_serializer.save(workout=instance)
 
         return instance
     
