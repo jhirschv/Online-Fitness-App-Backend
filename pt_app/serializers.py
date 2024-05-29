@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Program, Workout, Exercise, WorkoutExercise, User, WorkoutSession, ExerciseLog, ExerciseSet, Message, ChatSession, TrainerRequest,TrainerClientRelationship 
+from .models import Program, Workout, Exercise, WorkoutExercise, UserProgramProgress, User, WorkoutSession, ExerciseLog, ExerciseSet, Message, ChatSession, TrainerRequest,TrainerClientRelationship 
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.db.models import Max
@@ -118,6 +118,36 @@ class GuestRegistrationSerializer(serializers.ModelSerializer):
             email=validated_data['email'],
             password=plaintext_password,  # Django hashes the password here
             guest=True
+        )
+
+        # Assign the guest to the specified program and activate it
+        try:
+            program = Program.objects.get(id=117)  # Assume the program with ID 117 exists
+        except Program.DoesNotExist:
+            # Handle case where the program does not exist
+            # For simplicity, we'll just raise an error here
+            raise serializers.ValidationError({'program': 'Program not found'})
+
+        # Add user as a participant of the program
+        program.participants.add(user)
+
+        # Create a UserProgramProgress entry to set the program as active for this user
+        UserProgramProgress.objects.create(
+            user=user,
+            program=program,
+            is_active=True
+        )
+
+         # Create or retrieve a ChatSession for the guest and John or user with ID 1
+        john_user = User.objects.get(id=1)  # Assuming user with ID 1 exists and is John
+        chat_session = ChatSession.objects.create()
+        chat_session.participants.add(user, john_user)
+
+        # Create an initial message in this chat session
+        Message.objects.create(
+            chat_session=chat_session,
+            sender=john_user,
+            content="Welcome to Train.io!"
         )
 
         # Return both the user object and the plaintext password

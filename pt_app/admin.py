@@ -20,7 +20,7 @@ class UserAdmin(BaseUserAdmin):
 
 @admin.register(Program)
 class ProgramAdmin(admin.ModelAdmin):
-    list_display = ('name', 'description', 'creator')
+    list_display = ('name', 'description', 'creator', 'id')
     search_fields = ('name', 'creator__username')
     list_filter = ('creator',)
     filter_horizontal = ('participants',)
