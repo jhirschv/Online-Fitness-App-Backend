@@ -40,7 +40,7 @@ SECRET_KEY = 'django-insecure-me=mp$&2%oir8in@ny@vy0ef1+kog2*5jwrtd0+kz)^$6!^69k
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['https://train-io-9b748a5f64b5.herokuapp.com/']
+ALLOWED_HOSTS = ['train-io-9b748a5f64b5.herokuapp.com']
 
 CORS_ALLOWED_ORIGINS = []
 
