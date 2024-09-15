@@ -42,7 +42,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['train-io-9b748a5f64b5.herokuapp.com']
 
-CORS_ALLOWED_ORIGINS = []
+CORS_ALLOWED_ORIGINS = ['trainio-liart.vercel.app']
 
 
 # Application definition
