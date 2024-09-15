@@ -34,14 +34,13 @@ MEDIA_URL = '/media/'
 AUTH_USER_MODEL = "pt_app.User"
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
-
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-me=mp$&2%oir8in@ny@vy0ef1+kog2*5jwrtd0+kz)^$6!^69k'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['https://train-io-9b748a5f64b5.herokuapp.com/']
 
 CORS_ALLOWED_ORIGINS = []
 
@@ -190,6 +189,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
